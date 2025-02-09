@@ -93,14 +93,7 @@ class Side:
     def avg_depth(self):
         return np.mean([point[2] for point in self.transformed_points])
 
-    def get_edge_points(self):
-        transformed_edges = [[self.transformed_points[0], (self.transformed_points[0]+self.transformed_points[1]*2)/3, (self.transformed_points[0]*2+self.transformed_points[1])/3, self.transformed_points[1]],
-                             [self.transformed_points[1], (self.transformed_points[1]+self.transformed_points[2]*2)/3, (
-                                 self.transformed_points[1]*2+self.transformed_points[2])/3, self.transformed_points[2]],
-                             [self.transformed_points[2], (self.transformed_points[2]+self.transformed_points[3]*2)/3, (
-                                 self.transformed_points[2]*2+self.transformed_points[3])/3, self.transformed_points[3]],
-                             [self.transformed_points[3], (self.transformed_points[3]+self.transformed_points[0]*2)/3, (self.transformed_points[3]*2+self.transformed_points[0])/3, self.transformed_points[0]],]
-
+    def transform_list_of_points(self, transformed_edges):
         res = []
         for points in transformed_edges:
             res1 = []
@@ -112,6 +105,42 @@ class Side:
                 res1.append([x, y])
             res.append(res1)
         return res
+
+    def get_small_cubes_points(self):
+
+        edge_points = [[self.transformed_points[0], (self.transformed_points[0]*2+self.transformed_points[1])/3, (self.transformed_points[0]+self.transformed_points[1]*2)/3, self.transformed_points[1]],
+                       [self.transformed_points[1], (
+                           self.transformed_points[1]*2+self.transformed_points[2])/3, (self.transformed_points[1]+self.transformed_points[2]*2)/3, self.transformed_points[2]],
+                       [self.transformed_points[2], (
+                           self.transformed_points[2]*2+self.transformed_points[3])/3, (self.transformed_points[2]+self.transformed_points[3]*2)/3, self.transformed_points[3]],
+                       [self.transformed_points[3], (self.transformed_points[3]*2+self.transformed_points[0])/3, (self.transformed_points[3]+self.transformed_points[0]*2)/3, self.transformed_points[0]],]
+
+        top_to_bottom_points = [edge_points[0], [], [], edge_points[2][::-1]]
+        left_to_right_points = [edge_points[1], [], [], edge_points[3][::-1]]
+
+        for pointA, pointB in zip(edge_points[0], edge_points[2][::-1]):
+            top_to_bottom_points[1].append((pointA*2+pointB)/3)
+            top_to_bottom_points[2].append((pointA+pointB*2)/3)
+
+        for pointA, pointB in zip(edge_points[1], edge_points[3][::-1]):
+            left_to_right_points[1].append((pointA*2+pointB)/3)
+            left_to_right_points[2].append((pointA+pointB*2)/3)
+
+        top_to_bottom_points_transformed = self.transform_list_of_points(
+            top_to_bottom_points)
+        left_to_right_points_transformed = self.transform_list_of_points(
+            left_to_right_points)
+        return (top_to_bottom_points_transformed, left_to_right_points_transformed)
+
+    def get_edge_points(self):
+        transformed_edges = [[self.transformed_points[0], (self.transformed_points[0]+self.transformed_points[1]*2)/3, (self.transformed_points[0]*2+self.transformed_points[1])/3, self.transformed_points[1]],
+                             [self.transformed_points[1], (self.transformed_points[1]+self.transformed_points[2]*2)/3, (
+                                 self.transformed_points[1]*2+self.transformed_points[2])/3, self.transformed_points[2]],
+                             [self.transformed_points[2], (self.transformed_points[2]+self.transformed_points[3]*2)/3, (
+                                 self.transformed_points[2]*2+self.transformed_points[3])/3, self.transformed_points[3]],
+                             [self.transformed_points[3], (self.transformed_points[3]+self.transformed_points[0]*2)/3, (self.transformed_points[3]*2+self.transformed_points[0])/3, self.transformed_points[0]],]
+
+        return self.transform_list_of_points(transformed_edges)
 
 
 class Cube:
@@ -253,7 +282,6 @@ class TrueCube:
             times = 1 if times == 3 else 3
         for _ in range(0, times):
             self.right_turn(new_color)
-
 
  # 0-white
 # 1-yellow

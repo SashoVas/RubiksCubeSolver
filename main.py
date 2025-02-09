@@ -92,9 +92,15 @@ while True:
             for point in points:
                 pygame.draw.circle(screen, BLACK, point, 4)
 
-        for pointA, pointB in zip(edge_points[0], edge_points[2][::-1]):
-            pygame.draw.line(screen, BLACK, pointA, pointB)
+        top_to_bottom_points, left_to_right_points = side.get_small_cubes_points()
 
-        for pointA, pointB in zip(edge_points[1], edge_points[3][::-1]):
-            pygame.draw.line(screen, BLACK, pointA, pointB)
+        for i in range(0, 3):
+            for j in range(1, 4):
+                up_left = top_to_bottom_points[i][j-1]
+                up_right = top_to_bottom_points[i][j]
+                down_left = top_to_bottom_points[i+1][j-1]
+                down_right = top_to_bottom_points[i+1][j]
+                pygame.draw.polygon(
+                    screen, BLACK, (up_left, up_right, down_right, down_left), 1)
+
     pygame.display.update()
