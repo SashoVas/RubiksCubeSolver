@@ -12,6 +12,9 @@ WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 YELLOW = (255, 255, 0)
 COLORS = [BLUE, GREEN, YELLOW, WHITE, RED, ORANGE]
+COLORS_NUMS = [5, 3, 1, 0, 2, 4]
+color_dict = {0: WHITE, 1: YELLOW, 2: RED, 3: GREEN, 4: ORANGE, 5: BLUE}
+
 MOVE_TRANSLATIONS = {
     (0, 'T'): (4, 3),
     (0, 'B'): (2, 1),
@@ -47,7 +50,7 @@ MOVE_TRANSLATIONS = {
 
 class Side:
 
-    def __init__(self, up_left, down_left, up_right, down_right, color):
+    def __init__(self, up_left, down_left, up_right, down_right, color, color_num):
         self.up_left = up_left.reshape((3, 1))
         self.down_left = down_left.reshape((3, 1))
         self.up_right = up_right.reshape((3, 1))
@@ -60,6 +63,7 @@ class Side:
             [0, 1, 0]
         ])
         self.color = color
+        self.color_num = color_num
 
     def apply_transform(self, transformations):
         self.up_left_transformed = self.up_left
@@ -106,7 +110,7 @@ class Side:
             res.append(res1)
         return res
 
-    def get_small_cubes_points(self):
+    def get_small_cubes_edge_points(self):
 
         edge_points = [[self.transformed_points[0], (self.transformed_points[0]*2+self.transformed_points[1])/3, (self.transformed_points[0]+self.transformed_points[1]*2)/3, self.transformed_points[1]],
                        [self.transformed_points[1], (
@@ -131,6 +135,19 @@ class Side:
         left_to_right_points_transformed = self.transform_list_of_points(
             left_to_right_points)
         return (top_to_bottom_points_transformed, left_to_right_points_transformed)
+
+    def get_small_cubes_polygon(self):
+        top_to_bottom_points, left_to_right_points = self.get_small_cubes_edge_points()
+        result = [[], [], []]
+        for i in range(0, 3):
+            for j in range(1, 4):
+                up_left = top_to_bottom_points[i][j-1]
+                up_right = top_to_bottom_points[i][j]
+                down_left = top_to_bottom_points[i+1][j-1]
+                down_right = top_to_bottom_points[i+1][j]
+                result[i].append((up_left, up_right, down_right, down_left))
+
+        return result
 
     def get_edge_points(self):
         transformed_edges = [[self.transformed_points[0], (self.transformed_points[0]+self.transformed_points[1]*2)/3, (self.transformed_points[0]*2+self.transformed_points[1])/3, self.transformed_points[1]],
@@ -160,12 +177,14 @@ class Cube:
             [[-1, -1,  1], [-1,  1,  1], [1,  1,  1],
                 [1, -1,  1]]   # Front (+Z) face
         ]
-        for side, color in zip(sides_cord, COLORS):
+        for side, color, color_num in zip(sides_cord, COLORS, COLORS_NUMS):
             self.sides.append(Side(
                 np.array(side[0]),
                 np.array(side[1]),
                 np.array(side[2]),
-                np.array(side[3]), color))
+                np.array(side[3]), color, color_num))
+        self.cube = TrueCube()
+        self.cube.turn(2, 'R', 'F')
 
     def get_all_points(self):
         res = []
@@ -191,6 +210,20 @@ class Cube:
         self.sides.sort(key=lambda x: x.avg_depth())
         return self.sides[0:3]
 
+    def get_top_small_cubes(self):
+        top_sides = self.get_top_sides()
+        result = []
+        for side in top_sides:
+            polygons = side.get_small_cubes_polygon()
+            face = []
+            for row1, row2 in zip(polygons, self.cube.sides[side.color_num]):
+                res_row = []
+                for position, color in zip(row1, row2):
+                    res_row.append((position, color))
+                face.append(res_row)
+            result.append(face)
+        return result
+
 
 # 0-white
 # 1-yellow
@@ -198,6 +231,8 @@ class Cube:
 # 3-green
 # 4-orange
 # 5-blue
+
+
 class TrueCube:
     def __init__(self):
         self.sides = [[[i]*3, [i]*3, [i]*3] for i in range(0, 6)]
@@ -289,6 +324,7 @@ class TrueCube:
 # 3-green
 # 4-orange
 # 5-blue
-cube = TrueCube()
-cube.turn(0, 'T', 'L')
-cube.print_cube()
+if __name__ == '__main__':
+    cube = TrueCube()
+    cube.turn(0, 'T', 'L')
+    cube.print_cube()

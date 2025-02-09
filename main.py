@@ -5,8 +5,15 @@ from cube import Cube
 
 WIDTH = 800
 HEIGHT = 600
+RED = (255, 0, 0)
+GREEN = (0, 255, 0)
+BLUE = (0, 0, 255)
+ORANGE = (255, 165, 0)
+WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
+YELLOW = (255, 255, 0)
 GRAY = (128, 128, 128)
+color_dict = {0: WHITE, 1: YELLOW, 2: RED, 3: GREEN, 4: ORANGE, 5: BLUE}
 
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
@@ -75,32 +82,35 @@ while True:
     )
     if is_rotating:
         angle_y += 0.01
-        angle_x += 0.01
-        angle_z += 0.01
+        # angle_x += 0.01
+        # angle_z += 0.01
     screen.fill(GRAY)
     i = 0
     cube.apply_transform([rotation_z, rotation_y, rotation_x])
+    sides = cube.get_top_small_cubes()
+    cube.cube.print_cube()
+    for side in sides:
+        for row in side:
+            for position, color in row:
+                pygame.draw.polygon(screen, color_dict[color], position)
+                pygame.draw.polygon(screen, BLACK, position, width=1)
 
-    for side in cube.get_top_sides():
-        points = side.to_2d()
-
-        pygame.draw.polygon(screen, side.color, points)
-        pygame.draw.polygon(screen, BLACK, points, 3)
-
-        edge_points = side.get_edge_points()
-        for points in edge_points:
-            for point in points:
-                pygame.draw.circle(screen, BLACK, point, 4)
-
-        top_to_bottom_points, left_to_right_points = side.get_small_cubes_points()
-
-        for i in range(0, 3):
-            for j in range(1, 4):
-                up_left = top_to_bottom_points[i][j-1]
-                up_right = top_to_bottom_points[i][j]
-                down_left = top_to_bottom_points[i+1][j-1]
-                down_right = top_to_bottom_points[i+1][j]
-                pygame.draw.polygon(
-                    screen, BLACK, (up_left, up_right, down_right, down_left), 1)
+    # for side in cube.get_top_sides():
+    #    points = side.to_2d()
+#
+    #    pygame.draw.polygon(screen, side.color, points)
+    #    pygame.draw.polygon(screen, BLACK, points, 3)
+#
+    #    edge_points = side.get_edge_points()
+    #    for points in edge_points:
+    #        for point in points:
+    #            pygame.draw.circle(screen, BLACK, point, 4)
+#
+    #    polygons = side.get_small_cubes_polygon()
+    #    top_to_bottom_points, left_to_right_points = side.get_small_cubes_edge_points()
+#
+    #    for row in polygons:
+    #        for polygon in row:
+    #            pygame.draw.polygon(screen, BLACK, polygon, width=1)
 
     pygame.display.update()
