@@ -204,6 +204,7 @@ class Cube:
         self.cube = TrueCube()
         self.cube.turn(2, 'R', 'F')
         self.cube.turn(3, 'R', 'F')
+        self.cube.turn(1, 'R', 'F')
 
     def get_all_points(self):
         res = []
@@ -316,10 +317,10 @@ class TrueCube:
     def right_turn(self, color):
         pos_dict = {0: [(2, 0, -1, False), (3, 0, -1, False), (4, 0, -1, False), (5, 0, -1, False)],
                     1: [(2, 2, -1, False), (5, 2, -1, False), (4, 2, -1, False), (3, 2, -1, False)],
-                    2: [(1, 0, -1, True), (3, -1, 2, False), (0, 2, -1, True), (5, -1, 0, False)],
-                    3: [(0, -1, 0, True), (2, -1, 0, False), (1, -1, 0, True), (4, -1, 2, False)],
-                    4: [(0, 0, -1, True), (3, -1, 0, False), (1, 2, -1, True), (5, -1, 2, False)],
-                    5: [(0, -1, 2, True), (4, -1, 0, False), (1, -1, 2, True), (2, -1, 2, False)]
+                    2: [(1, 0, -1, False), (3, -1, 2, False), (0, 2, -1, True), (5, -1, 0, False)],
+                    3: [(0, -1, 0, False), (2, -1, 0, False), (1, -1, 0, False), (4, -1, 2, True)],
+                    4: [(0, 0, -1, False), (3, -1, 0, True), (1, 2, -1, False), (5, -1, 2, True)],
+                    5: [(0, -1, 2, False), (4, -1, 0, True), (1, -1, 2, True), (2, -1, 2, False)]
                     }
         info = pos_dict[color]
         self.rotate_face(color)
