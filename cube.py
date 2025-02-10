@@ -119,14 +119,14 @@ class Side:
                            self.transformed_points[2]*2+self.transformed_points[3])/3, (self.transformed_points[2]+self.transformed_points[3]*2)/3, self.transformed_points[3]],
                        [self.transformed_points[3], (self.transformed_points[3]*2+self.transformed_points[0])/3, (self.transformed_points[3]+self.transformed_points[0]*2)/3, self.transformed_points[0]],]
 
-        top_to_bottom_points = [edge_points[0], [], [], edge_points[2][::-1]]
-        left_to_right_points = [edge_points[1], [], [], edge_points[3][::-1]]
+        top_to_bottom_points = [edge_points[0], [], [], edge_points[2]]
+        left_to_right_points = [edge_points[1], [], [], edge_points[3]]
 
-        for pointA, pointB in zip(edge_points[0], edge_points[2][::-1]):
+        for pointA, pointB in zip(edge_points[0], edge_points[2]):
             top_to_bottom_points[1].append((pointA*2+pointB)/3)
             top_to_bottom_points[2].append((pointA+pointB*2)/3)
 
-        for pointA, pointB in zip(edge_points[1], edge_points[3][::-1]):
+        for pointA, pointB in zip(edge_points[1], edge_points[3]):
             left_to_right_points[1].append((pointA*2+pointB)/3)
             left_to_right_points[2].append((pointA+pointB*2)/3)
 
@@ -164,17 +164,17 @@ class Cube:
     def __init__(self):
         self.sides = []
         sides_cord = [
-            [[-1, -1, -1], [-1, -1,  1], [-1,  1,  1],
-                [-1,  1, -1]],  # Left (-X) face
-            [[1, -1, -1], [1, -1,  1], [1,  1,  1],
+            [[-1,  -1, -1], [-1, 1, -1], [-1,  -1,  1], [-1, 1,  1],
+             ],  # Left (-X) face
+            [[1, -1,  1], [1,  1,  1], [1, -1, -1],
                 [1,  1, -1]],  # Right (+X) face
-            [[-1, -1, -1], [-1, -1,  1], [1, -1,  1],
+            [[-1, -1,  1], [-1, -1, -1],  [1, -1,  1],
                 [1, -1, -1]],  # Bottom (-Y) face
-            [[-1,  1, -1], [-1,  1,  1], [1,  1,  1],
-                [1,  1, -1]],  # Top (+Y) face
-            [[-1, -1, -1], [-1,  1, -1], [1,  1, -1],
-                [1, -1, -1]],  # Back (-Z) face
-            [[-1, -1,  1], [-1,  1,  1], [1,  1,  1],
+            [[-1,  1, -1], [-1,  1,  1], [1,  1, -1], [1,  1,  1],
+             ],  # Top (+Y) face
+            [[1,  1, -1], [1, -1, -1], [-1,  1, -1], [-1, -1, -1],
+             ],  # Back (-Z) face
+            [[-1,  1,  1], [-1, -1,  1],  [1,  1,  1],
                 [1, -1,  1]]   # Front (+Z) face
         ]
         for side, color, color_num in zip(sides_cord, COLORS, COLORS_NUMS):
@@ -215,13 +215,19 @@ class Cube:
         result = []
         for side in top_sides:
             polygons = side.get_small_cubes_polygon()
-            face = []
-            for row1, row2 in zip(polygons, self.cube.sides[side.color_num]):
-                res_row = []
-                for position, color in zip(row1, row2):
-                    res_row.append((position, color))
-                face.append(res_row)
-            result.append(face)
+            colors = self.cube.sides[side.color_num]
+
+            side_polygons = []
+            if side.color_num == 0 or side.color_num == 1:
+                for i in range(0, 3):
+                    for j in range(0, 3):
+                        side_polygons.append((polygons[i][j], colors[j][2-i]))
+            else:
+                for i in range(0, 3):
+                    for j in range(0, 3):
+                        side_polygons.append((polygons[i][j], colors[j][i]))
+            result.append(side_polygons)
+
         return result
 
 

@@ -18,12 +18,16 @@ color_dict = {0: WHITE, 1: YELLOW, 2: RED, 3: GREEN, 4: ORANGE, 5: BLUE}
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 angle_x = 10
-angle_y = 0
+angle_y = 10
 angle_z = 0
 is_rotating = True
 cube = Cube()
 is_pressed_key = False
 lastKey = None
+pygame.init()
+
+font = pygame.font.Font('freesansbold.ttf', 10)
+
 while True:
     clock.tick(60)
 
@@ -84,33 +88,13 @@ while True:
         angle_y += 0.01
         # angle_x += 0.01
         # angle_z += 0.01
+        pass
     screen.fill(GRAY)
-    i = 0
     cube.apply_transform([rotation_z, rotation_y, rotation_x])
     sides = cube.get_top_small_cubes()
-    cube.cube.print_cube()
     for side in sides:
-        for row in side:
-            for position, color in row:
-                pygame.draw.polygon(screen, color_dict[color], position)
-                pygame.draw.polygon(screen, BLACK, position, width=1)
-
-    # for side in cube.get_top_sides():
-    #    points = side.to_2d()
-#
-    #    pygame.draw.polygon(screen, side.color, points)
-    #    pygame.draw.polygon(screen, BLACK, points, 3)
-#
-    #    edge_points = side.get_edge_points()
-    #    for points in edge_points:
-    #        for point in points:
-    #            pygame.draw.circle(screen, BLACK, point, 4)
-#
-    #    polygons = side.get_small_cubes_polygon()
-    #    top_to_bottom_points, left_to_right_points = side.get_small_cubes_edge_points()
-#
-    #    for row in polygons:
-    #        for polygon in row:
-    #            pygame.draw.polygon(screen, BLACK, polygon, width=1)
+        for position, color in side:
+            pygame.draw.polygon(screen, color_dict[color], position)
+            pygame.draw.polygon(screen, BLACK, position, width=1)
 
     pygame.display.update()
