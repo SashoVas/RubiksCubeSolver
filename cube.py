@@ -11,8 +11,8 @@ ORANGE = (255, 165, 0)
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 YELLOW = (255, 255, 0)
-COLORS = [BLUE, GREEN, YELLOW, WHITE, RED, ORANGE]
-COLORS_NUMS = [5, 3, 1, 0, 2, 4]
+COLORS = [BLUE, GREEN, YELLOW, WHITE, ORANGE, RED]
+COLORS_NUMS = [5, 3, 1, 0, 4, 2]
 color_dict = {0: WHITE, 1: YELLOW, 2: RED, 3: GREEN, 4: ORANGE, 5: BLUE}
 
 MOVE_TRANSLATIONS = {
@@ -91,6 +91,7 @@ class Side:
 
             x = int(projection[0][0]*SCALE+CUBE_CENTER_WIDTH)
             y = int(projection[1][0]*SCALE+CUBE_CENTER_HEIGHT)
+
             res.append([x, y])
         return res
 
@@ -106,6 +107,7 @@ class Side:
 
                 x = int(projection[0][0]*SCALE+CUBE_CENTER_WIDTH)
                 y = int(projection[1][0]*SCALE+CUBE_CENTER_HEIGHT)
+
                 res1.append([x, y])
             res.append(res1)
         return res
@@ -160,22 +162,38 @@ class Side:
         return self.transform_list_of_points(transformed_edges)
 
 
+# sides_cord = [
+#            [[-1,  -1, -1], [-1, 1, -1], [-1,  -1,  1], [-1, 1,  1],
+#             ],  # Left (-X) face
+#            [[1, -1,  1], [1,  1,  1], [1, -1, -1],
+#                [1,  1, -1]],  # Right (+X) face
+#            [[-1,  1,  1], [-1,  1, -1],  [1,  1,  1], [1,  1, -1],
+#             ],  # Bottom (+Y) face
+#            [[-1, -1, -1], [-1, -1,  1], [1, -1, -1],   [1, -1,  1]
+#             ],  # Top (-Y) face
+#            [[1, -1, -1], [1,  1, -1],  [-1,  -1, -1], [-1, 1, -1],
+#             ],  # Back (-Z) face
+#            [[-1, -1,  1], [-1,  1,  1],   [1,  -1,  1],
+#                [1, 1,  1]]   # Front (+Z) face
+#        ]
+
+
 class Cube:
     def __init__(self):
         self.sides = []
         sides_cord = [
-            [[-1,  -1, -1], [-1, 1, -1], [-1,  -1,  1], [-1, 1,  1],
+            [[-1,  -1,  1], [-1, 1,  1], [-1,  -1, -1], [-1, 1, -1],
              ],  # Left (-X) face
-            [[1, -1,  1], [1,  1,  1], [1, -1, -1],
-                [1,  1, -1]],  # Right (+X) face
-            [[-1, -1,  1], [-1, -1, -1],  [1, -1,  1],
-                [1, -1, -1]],  # Bottom (-Y) face
-            [[-1,  1, -1], [-1,  1,  1], [1,  1, -1], [1,  1,  1],
-             ],  # Top (+Y) face
-            [[1,  1, -1], [1, -1, -1], [-1,  1, -1], [-1, -1, -1],
+            [[1, -1, -1],
+             [1,  1, -1], [1, -1,  1], [1,  1,  1], ],  # Right (+X) face
+            [[1,  1,  1], [1,  1, -1], [-1,  1,  1], [-1,  1, -1],
+             ],  # Bottom (+Y) face
+            [[1, -1, -1],   [1, -1,  1], [-1, -1, -1], [-1, -1,  1],
+             ],  # Top (-Y) face
+            [[-1,  -1, -1], [-1, 1, -1], [1, -1, -1], [1,  1, -1],
              ],  # Back (-Z) face
-            [[-1,  1,  1], [-1, -1,  1],  [1,  1,  1],
-                [1, -1,  1]]   # Front (+Z) face
+            [[1,  -1,  1],
+             [1, 1,  1], [-1, -1,  1], [-1,  1,  1],]   # Front (+Z) face
         ]
         for side, color, color_num in zip(sides_cord, COLORS, COLORS_NUMS):
             self.sides.append(Side(
@@ -185,6 +203,7 @@ class Cube:
                 np.array(side[3]), color, color_num))
         self.cube = TrueCube()
         self.cube.turn(2, 'R', 'F')
+        self.cube.turn(3, 'R', 'F')
 
     def get_all_points(self):
         res = []
@@ -218,14 +237,11 @@ class Cube:
             colors = self.cube.sides[side.color_num]
 
             side_polygons = []
-            if side.color_num == 0 or side.color_num == 1:
-                for i in range(0, 3):
-                    for j in range(0, 3):
-                        side_polygons.append((polygons[i][j], colors[j][2-i]))
-            else:
-                for i in range(0, 3):
-                    for j in range(0, 3):
-                        side_polygons.append((polygons[i][j], colors[j][i]))
+
+            for i in range(0, 3):
+                for j in range(0, 3):
+                    side_polygons.append((polygons[i][j], colors[j][i]))
+                    # side_polygons.append((polygons[i][j], colors[i][j]))
             result.append(side_polygons)
 
         return result
@@ -298,20 +314,21 @@ class TrueCube:
         self.paste_arr([row1[0], row2[0], row3[0]], color,  0, -1, True)
 
     def right_turn(self, color):
-        pos_dict = {0: [(2, 0, -1), (3, 0, -1), (4, 0, -1), (5, 0, -1)],
-                    1: [(2, 2, -1), (5, 2, -1), (4, 2, -1), (3, 2, -1)],
-                    2: [(1, 0, -1), (3, -1, 2), (0, 2, -1), (5, -1, 0)],
-                    3: [(0, -1, 0), (2, -1, 0), (1, -1, 0), (4, -1, 2)],
-                    4: [(0, 0, -1), (3, -1, 0), (1, 2, -1), (5, -1, 2)],
-                    5: [(0, -1, 2), (4, -1, 0), (1, -1, 2), (2, -1, 2)]
+        pos_dict = {0: [(2, 0, -1, False), (3, 0, -1, False), (4, 0, -1, False), (5, 0, -1, False)],
+                    1: [(2, 2, -1, False), (5, 2, -1, False), (4, 2, -1, False), (3, 2, -1, False)],
+                    2: [(1, 0, -1, True), (3, -1, 2, False), (0, 2, -1, True), (5, -1, 0, False)],
+                    3: [(0, -1, 0, True), (2, -1, 0, False), (1, -1, 0, True), (4, -1, 2, False)],
+                    4: [(0, 0, -1, True), (3, -1, 0, False), (1, 2, -1, True), (5, -1, 2, False)],
+                    5: [(0, -1, 2, True), (4, -1, 0, False), (1, -1, 2, True), (2, -1, 2, False)]
                     }
         info = pos_dict[color]
         self.rotate_face(color)
         row = self.extract_first_side(info[0][0], info[0][1], info[0][2])
         for i in range(1, 4):
             row = self.paste_arr(
-                row, info[i][0], info[i][1], info[i][2], rev=i == 3 and color != 0 and color != 1)
-        row = self.paste_arr(row, info[0][0], info[0][1], info[0][2])
+                row, info[i][0], info[i][1], info[i][2], rev=info[i][3])
+        row = self.paste_arr(
+            row, info[0][0], info[0][1], info[0][2], rev=info[0][3])
 
     def turn(self, color, segment, direction):
 

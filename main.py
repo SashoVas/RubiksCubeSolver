@@ -17,8 +17,8 @@ color_dict = {0: WHITE, 1: YELLOW, 2: RED, 3: GREEN, 4: ORANGE, 5: BLUE}
 
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
-angle_x = 10
-angle_y = 10
+angle_x = 0.5
+angle_y = 0
 angle_z = 0
 is_rotating = True
 cube = Cube()
@@ -90,11 +90,15 @@ while True:
         # angle_z += 0.01
         pass
     screen.fill(GRAY)
+    cube.cube.print_cube()
     cube.apply_transform([rotation_z, rotation_y, rotation_x])
     sides = cube.get_top_small_cubes()
     for side in sides:
         for position, color in side:
+            # position = [(x[1], x[0])for x in position]
             pygame.draw.polygon(screen, color_dict[color], position)
             pygame.draw.polygon(screen, BLACK, position, width=1)
+        # pygame.draw.polygon(screen, BLACK, side[0][0])
+        # pygame.draw.polygon(screen, BLACK, side[1][0])
 
     pygame.display.update()
