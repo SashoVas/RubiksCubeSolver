@@ -202,9 +202,9 @@ class Cube:
                 np.array(side[2]),
                 np.array(side[3]), color, color_num))
         self.cube = TrueCube()
-        self.cube.turn(2, 'R', 'F')
-        self.cube.turn(3, 'R', 'F')
-        self.cube.turn(1, 'R', 'F')
+        # self.cube.turn(2, 'R', 'F')
+        # self.cube.turn(3, 'R', 'F')
+        # self.cube.turn(1, 'R', 'F')
 
     def get_all_points(self):
         res = []
@@ -341,6 +341,7 @@ class TrueCube:
             times = 1 if times == 3 else 3
         for _ in range(0, times):
             self.right_turn(new_color)
+
 
  # 0-white
 # 1-yellow

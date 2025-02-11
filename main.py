@@ -13,6 +13,7 @@ WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 YELLOW = (255, 255, 0)
 GRAY = (128, 128, 128)
+LIME = (50, 205, 50)
 color_dict = {0: WHITE, 1: YELLOW, 2: RED, 3: GREEN, 4: ORANGE, 5: BLUE}
 
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -20,51 +21,90 @@ clock = pygame.time.Clock()
 angle_x = 0.5
 angle_y = 0
 angle_z = 0
-is_rotating = True
 cube = Cube()
-is_pressed_key = False
-lastKey = None
+
 pygame.init()
 
-font = pygame.font.Font('freesansbold.ttf', 10)
+is_rotating = True
+is_pressed_key = False
+lastKey = None
+last_pressed_key = None
+current_pressed_key = None
+rotation_command = False
+commands_segment_selection = {'A': 'L', 'D': 'R', 'S': 'D', 'W': 'U'}
+commands_direction_selection = {'A': 'L', 'D': 'F'}
+
+
+def control_definition(event):
+    global is_rotating
+    global is_pressed_key
+    global lastKey
+    global last_pressed_key
+    global current_pressed_key
+    global rotation_command
+    global commands_segment_selection
+    global commands_direction_selection
+
+    if event.type == pygame.QUIT:
+        pygame.quit()
+        exit()
+
+    if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+        pygame.quit()
+        exit()
+
+    if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+        is_rotating = not is_rotating
+
+    if event.type == pygame.KEYUP:
+        is_pressed_key = False
+
+    if (event.type == pygame.KEYDOWN and event.key == pygame.K_RIGHT) or (is_pressed_key and lastKey == pygame.K_RIGHT):
+        angle_y -= 0.03
+        is_pressed_key = True
+        lastKey = pygame.K_RIGHT
+
+    if (event.type == pygame.KEYDOWN and event.key == pygame.K_LEFT) or (is_pressed_key and lastKey == pygame.K_LEFT):
+        angle_y += 0.03
+        is_pressed_key = True
+        lastKey = pygame.K_LEFT
+
+    if (event.type == pygame.KEYDOWN and event.key == pygame.K_UP) or (is_pressed_key and lastKey == pygame.K_UP):
+        angle_x -= 0.03
+        is_pressed_key = True
+        lastKey = pygame.K_UP
+
+    if (event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN) or (is_pressed_key and lastKey == pygame.K_DOWN):
+        angle_x += 0.03
+        is_pressed_key = True
+        lastKey = pygame.K_DOWN
+
+    if event.type == pygame.KEYDOWN and event.key == pygame.K_w:
+        last_pressed_key = current_pressed_key
+        current_pressed_key = 'W'
+        rotation_command = True
+
+    if event.type == pygame.KEYDOWN and event.key == pygame.K_a:
+        last_pressed_key = current_pressed_key
+        current_pressed_key = 'A'
+        rotation_command = True
+
+    if event.type == pygame.KEYDOWN and event.key == pygame.K_s:
+        last_pressed_key = current_pressed_key
+        current_pressed_key = 'S'
+        rotation_command = True
+
+    if event.type == pygame.KEYDOWN and event.key == pygame.K_d:
+        last_pressed_key = current_pressed_key
+        current_pressed_key = 'D'
+        rotation_command = True
+
 
 while True:
     clock.tick(60)
 
     for event in pygame.event.get()+[pygame.event.Event(0)]:
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            exit()
-
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-            pygame.quit()
-            exit()
-
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-            is_rotating = not is_rotating
-
-        if event.type == pygame.KEYUP:
-            is_pressed_key = False
-
-        if (event.type == pygame.KEYDOWN and event.key == pygame.K_RIGHT) or (is_pressed_key and lastKey == pygame.K_RIGHT):
-            angle_y -= 0.03
-            is_pressed_key = True
-            lastKey = pygame.K_RIGHT
-
-        if (event.type == pygame.KEYDOWN and event.key == pygame.K_LEFT) or (is_pressed_key and lastKey == pygame.K_LEFT):
-            angle_y += 0.03
-            is_pressed_key = True
-            lastKey = pygame.K_LEFT
-
-        if (event.type == pygame.KEYDOWN and event.key == pygame.K_UP) or (is_pressed_key and lastKey == pygame.K_UP):
-            angle_x -= 0.03
-            is_pressed_key = True
-            lastKey = pygame.K_UP
-
-        if (event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN) or (is_pressed_key and lastKey == pygame.K_DOWN):
-            angle_x += 0.03
-            is_pressed_key = True
-            lastKey = pygame.K_DOWN
+        control_definition(event)
 
     rotation_x = np.matrix([
         [1, 0, 0],
@@ -100,5 +140,21 @@ while True:
             pygame.draw.polygon(screen, BLACK, position, width=1)
         # pygame.draw.polygon(screen, BLACK, side[0][0])
         # pygame.draw.polygon(screen, BLACK, side[1][0])
+    selected_side = cube.get_top_sides()[0]
+    p = selected_side.to_2d()
+    temp = p[2]
+    p[2] = p[3]
+    p[3] = temp
+    pygame.draw.polygon(
+        screen, LIME, p, width=6)
 
+    if rotation_command and last_pressed_key != None and current_pressed_key != None:
+
+        cube.cube.turn(selected_side.color_num,
+                       commands_segment_selection[last_pressed_key],
+                       commands_direction_selection[current_pressed_key])
+
+        last_pressed_key = None
+        current_pressed_key = None
+    rotation_command = False
     pygame.display.update()
