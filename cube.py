@@ -51,6 +51,9 @@ MOVE_TRANSLATIONS = {
     (5, 'R'): (4, 1),
     (5, 'L'): (2, 3),
 }
+YELLOW_NEIGHBORS = {'L': 6, 'R': 3, 'U': 2, 'D': 4}
+WHITE = {'L': 3, 'R': 6, 'U': 4, 'D': 2}
+NORMAL_COLORS = [2, 5, 4, 3]
 
 
 class Side:
@@ -258,17 +261,91 @@ class Cube:
         self.last_scramble = moves
         for side_to_move, segment, direction in moves:
             self.cube.turn(side_to_move, segment, direction)
+
+
 # 0-white
 # 1-yellow
 # 2-red
 # 3-green
 # 4-orange
 # 5-blue
+# the adjacent colors to white and yellow,(position)-color
+YELLOW_NEIGHBORS = {(1, 0): 6, (1, 2): 3, (0, 1): 2, (2, 1): 4}
+WHITE_NEIGHBORS = {(1, 0): 3, (1, 2): 6, (0, 1): 4, (2, 1): 2}
+NORMAL_COLORS_NEIGHBORS = [2, 5, 4, 3]
 
 
 class TrueCube:
-    def __init__(self):
-        self.sides = [[[i]*3, [i]*3, [i]*3] for i in range(0, 6)]
+
+    def __init__(self, sides=None):
+        if sides is None:
+            self.sides = [[[i]*3, [i]*3, [i]*3] for i in range(0, 6)]
+        else:
+            self.sides = sides
+
+    def get_sides(self):
+        return self.sides
+
+    def set_sides(self, sides):
+        self.sides = []
+        for side in sides:
+            rows = []
+            for row in side:
+                rows.append(row.copy())
+            self.sides.append(rows)
+
+    def scramble(self):
+        moves = []
+        for _ in range(20):
+            side_to_move = randint(0, 5)
+            segment = SEGMENTS_ORDER[randint(0, 3)]
+            direction = ['F', 'B'][randint(0, 1)]
+            moves.append((side_to_move, segment, direction))
+
+        self.last_scramble = moves
+        for side_to_move, segment, direction in moves:
+            self.turn(side_to_move, segment, direction)
+
+    def get_adjacent_color(self, side_color, i, j):
+        if side_color == 0:
+            return self.sides[WHITE_NEIGHBORS[(i, j)]][0][1], WHITE_NEIGHBORS[(i, j)], (0, 1)
+
+        if side_color == 1:
+            return self.sides[YELLOW_NEIGHBORS[(i, j)]][0][1], YELLOW_NEIGHBORS[(i, j)], (0, 1)
+
+        if i == 1 and j == 0:
+            index = NORMAL_COLORS_NEIGHBORS.index(side_color)-1
+            if index < 0:
+                index = 3
+            return self.sides[NORMAL_COLORS_NEIGHBORS[index]][1][2], NORMAL_COLORS_NEIGHBORS[index], (1, 2)
+
+        if i == 1 and j == 2:
+            index = NORMAL_COLORS_NEIGHBORS.index(side_color)-1
+            if index > 3:
+                index = 0
+            return self.sides[NORMAL_COLORS_NEIGHBORS[index]][1][0], NORMAL_COLORS_NEIGHBORS[index], (1, 0)
+
+        index = NORMAL_COLORS_NEIGHBORS.index(side_color)
+        pos = (0, 0)
+        if index == 0:
+            pos = (2, 1)
+        if index == 1:
+            pos = (1, 2)
+        if index == 2:
+            pos = (0, 1)
+        if index == 3:
+            pos = (1, 0)
+        if i == 0:
+            return self.sides[0][pos[0]][pos[1]], 0, (pos[0], pos[1])
+
+    def search_two_side_piece(self, color1, color2):
+        for side_color, cubbies in self.sides:
+            for i in range(0, 3):
+                for j in range(0, 3):
+                    if cubbies[i][j] == color1:
+                        adj_color, adj_side_color, position = self.get_adjacent_color(
+                            side_color, i, j)
+                        return side_color, (i, j), adj_side_color, position
 
     def print_cube(self):
         for side in self.sides:
@@ -319,36 +396,40 @@ class TrueCube:
         row2 = self.sides[color][1].copy()
         row3 = self.sides[color][2].copy()
 
-        self.paste_arr(row1, color, -1, 2)
+        self.paste_arr([row1[0], row1[1], row1[2]], color, -1, 2)
         self.paste_arr([row1[2], row2[2], row3[2]], color, 2, -1, True)
-        self.paste_arr(row3, color, -1, 0)
+        self.paste_arr([row3[0], row3[1], row3[2]], color, -1, 0)
         self.paste_arr([row1[0], row2[0], row3[0]], color,  0, -1, True)
 
     def right_turn(self, color):
         pos_dict = {0: [(2, 0, -1, False), (3, 0, -1, False), (4, 0, -1, False), (5, 0, -1, False)],
                     1: [(2, 2, -1, False), (5, 2, -1, False), (4, 2, -1, False), (3, 2, -1, False)],
-                    2: [(1, 0, -1, False), (3, -1, 2, False), (0, 2, -1, True), (5, -1, 0, False)],
-                    3: [(0, -1, 0, False), (2, -1, 0, False), (1, -1, 0, False), (4, -1, 2, True)],
-                    4: [(0, 0, -1, False), (3, -1, 0, True), (1, 2, -1, False), (5, -1, 2, True)],
-                    5: [(0, -1, 2, False), (4, -1, 0, True), (1, -1, 2, True), (2, -1, 2, False)]
+                    2: [(1, 0, -1, False), (3, -1, 2, True), (0, 2, -1, False), (5, -1, 0, True)],
+                    3: [(0, -1, 0, False), (2, -1, 0, False), (1, -1, 0, True), (4, -1, 2, True)],
+                    4: [(0, 0, -1, True), (3, -1, 0, False), (1, 2, -1, True), (5, -1, 2, False)],
+                    5: [(0, -1, 2, True), (4, -1, 0, True), (1, -1, 2, False), (2, -1, 2, False)]
                     }
         info = pos_dict[color]
         self.rotate_face(color)
         row = self.extract_first_side(info[0][0], info[0][1], info[0][2])
         for i in range(1, 4):
             row = self.paste_arr(
-                row, info[i][0], info[i][1], info[i][2], rev=info[i][3])
+                row, info[i][0], info[i][1], info[i][2], rev=info[i-1][3])
         row = self.paste_arr(
-            row, info[0][0], info[0][1], info[0][2], rev=info[0][3])
+            row, info[0][0], info[0][1], info[0][2], rev=info[3][3])
 
-    def turn(self, color, segment, direction):
-
+    def translate_to_rights(self, color, segment, direction):
         if segment != 'F':
             new_color, times = MOVE_TRANSLATIONS[(color, segment)]
         else:
             new_color, times = color, 1
         if direction == 'B':
             times = 1 if times == 3 else 3
+        return (new_color, times)
+
+    def turn(self, color, segment, direction):
+
+        new_color, times = self.translate_to_rights(color, segment, direction)
         for _ in range(0, times):
             self.right_turn(new_color)
 
@@ -358,7 +439,143 @@ class TrueCube:
 # 3-green
 # 4-orange
 # 5-blue
+
+
+def check_white_orange(sides):
+    return sides[0][0][1] == 0 and sides[4][0][1] == 4
+
+
+def check_white_red(sides):
+    return sides[0][2][1] == 0 and sides[2][0][1] == 2 and check_white_orange(sides)
+
+
+def check_white_green(sides):
+    #
+    return sides[0][1][0] == 0 and sides[3][0][1] == 3 and check_white_red(sides)
+
+
+def check_white_blue(sides):
+    return sides[0][1][2] == 0 and sides[5][0][1] == 5 and check_white_green(sides)
+
+
+def check_white_orange_blue_edge(sides):
+    return check_white_blue(sides) and sides[0][0][2] == 0 and sides[5][0][2] == 5 and sides[4][0][0] == 4
+
+
+def check_white_orange_green_edge(sides):
+    return check_white_orange_blue_edge(sides) and sides[0][0][0] == 0 and sides[3][0][0] == 3 and sides[4][0][2] == 4
+
+
+def check_white_red_blue_edge(sides):
+    return check_white_orange_green_edge(sides) and sides[0][2][2] == 0 and sides[2][0][2] == 2 and sides[5][0][0] == 5
+
+
+def check_white_red_green_edge(sides):
+    return check_white_red_blue_edge(sides) and sides[0][2][0] == 0 and sides[2][0][0] == 2 and sides[3][0][2] == 3
+
+
+def find_path(sides, validation_func, moves):
+    if validation_func(sides):
+        return TrueCube(sides), []
+    dummy_cube = TrueCube()
+
+    queue = [(sides, [])]
+    # make dictionary
+    while True:
+        curr_sides, solving_steps = queue.pop(0)
+        for color, comp_moves in moves:
+            dummy_cube.set_sides(curr_sides)
+            for move in comp_moves.split(' '):
+                dummy_cube.turn(color, move, 'F')
+            if validation_func(dummy_cube.get_sides()):
+                return dummy_cube, solving_steps+[(color, comp_moves)]
+            queue.append((dummy_cube.get_sides(), solving_steps +
+                         [(color, comp_moves)]))
+
+
+def get_unique_moves():
+    dummy_cube = TrueCube()
+    segments = ['U', 'D', 'L', 'R']
+    directions = ['F', 'B']
+    all_moves = []
+    for color in range(2, 6):
+        for segment in segments:
+            all_moves.append((color, segment))
+    unique_moves_translation = set()
+    unique_moves = []
+    for color, segment in all_moves:
+        new_color, times = dummy_cube.translate_to_rights(
+            color, segment, 'F')
+        if (new_color, times) not in unique_moves_translation:
+            unique_moves_translation.add((new_color, times))
+            unique_moves.append((color, segment))
+    return unique_moves
+
+
+def get_needed_moves(moves, faces):
+    res = []
+    for move in moves:
+        for face in faces:
+            res.append((face, move))
+    return res
+
+
 if __name__ == '__main__':
     cube = TrueCube()
-    cube.turn(0, 'T', 'L')
+    # cube.turn(4, 'R', 'F')
+    # cube.turn(3, 'R', 'F')
+    # cube.turn(3, 'R', 'F')
+    # cube.turn(3, 'R', 'F')
+
+    cube.scramble()
+    # cube.turn(4, 'F', 'F')
+    # cube.turn(4, 'R', 'F')
+    # cube.turn(4, 'R', 'F')
+    # cube.turn(4, 'L', 'F')
+    # cube.turn(5, 'R', 'F')
+    # cube.turn(4, 'R', 'B')
+    # cube.turn(4, 'R', 'B')
+    # cube.turn(4, 'F', 'B')
+
     cube.print_cube()
+    print("==============")
+    print("==============")
+    print("==============")
+    solution = []
+    all_moves = get_unique_moves()
+    moves = ['F F', 'D R F F F R R R', 'L D L L L']
+    needed_moves = get_needed_moves(moves, range(2, 6)) + all_moves
+    # needed_moves = [(4, 'L'), (5, 'R')]
+    # needed_moves += [(0, 'F'), (0, 'F F'), (0, 'F F F')]
+
+    new_cube, solution_new = find_path(
+        cube.get_sides(), check_white_orange, needed_moves)
+    solution = solution + solution_new
+    new_cube, solution_new = find_path(
+        new_cube.get_sides(), check_white_red, needed_moves)
+    solution = solution + solution_new
+    new_cube, solution_new = find_path(
+        new_cube.get_sides(), check_white_green, needed_moves)
+    solution = solution + solution_new
+    new_cube, solution_new = find_path(
+        new_cube.get_sides(), check_white_blue, needed_moves)
+    solution = solution + solution_new
+
+    moves = ['R R R D D D R D', 'F D F F F D D D',
+             'R R R D D R D R R R D D D R']
+    needed_moves = get_needed_moves(moves, range(2, 6)) + all_moves
+
+    new_cube, solution_new = find_path(
+        new_cube.get_sides(), check_white_orange_blue_edge, needed_moves)
+    solution = solution + solution_new
+
+    new_cube, solution_new = find_path(
+        new_cube.get_sides(), check_white_orange_green_edge, needed_moves)
+    solution = solution + solution_new
+    new_cube, solution_new = find_path(
+        new_cube.get_sides(), check_white_red_blue_edge, needed_moves)
+    solution = solution + solution_new
+    new_cube, solution_new = find_path(
+        new_cube.get_sides(), check_white_red_green_edge, needed_moves)
+    solution = solution + solution_new
+    new_cube.print_cube()
