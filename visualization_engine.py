@@ -14,6 +14,8 @@ YELLOW = (255, 255, 0)
 GRAY = (128, 128, 128)
 LIME = (50, 205, 50)
 
+sides_order = [4, 3, 2, 5]
+
 
 class VisualizationEngine:
     def __init__(self):
@@ -35,6 +37,12 @@ class VisualizationEngine:
         self.last_pressed_key = None
         self.current_pressed_key = None
         self.rotation_command = False
+        # L- left segment
+        # D- right segment
+        # S- down segment
+        # W- top segment
+        segments_order = ['U', 'R', 'D', 'L']
+
         self.commands_segment_selection = {
             'A': 'L', 'D': 'R', 'S': 'D', 'W': 'U'}
         self.commands_direction_selection = {'A': 'L', 'D': 'F'}
@@ -126,7 +134,6 @@ class VisualizationEngine:
                 # self.angle_z += 0.01
                 pass
             self.screen.fill(GRAY)
-            self.cube.cube.print_cube()
             self.cube.apply_transform([rotation_z, rotation_y, rotation_x])
             sides = self.cube.get_top_small_cubes()
             for side in sides:
@@ -147,13 +154,16 @@ class VisualizationEngine:
 
             if self.rotation_command and self.last_pressed_key != None and self.current_pressed_key != None:
 
-                self.cube.cube.turn(selected_side.color_num,
-                                    self.commands_segment_selection[self.last_pressed_key],
-                                    self.commands_direction_selection[self.current_pressed_key])
+                self.cube.turn(selected_side.color_num,
+                               self.commands_segment_selection[self.last_pressed_key],
+                               self.commands_direction_selection[self.current_pressed_key],
+                               self.angle_y)
 
                 self.last_pressed_key = None
                 self.current_pressed_key = None
             self.rotation_command = False
+
+            print(self.angle_y)
             pygame.display.update()
 
 

@@ -14,35 +14,37 @@ YELLOW = (255, 255, 0)
 COLORS = [BLUE, GREEN, YELLOW, WHITE, ORANGE, RED]
 COLORS_NUMS = [5, 3, 1, 0, 4, 2]
 color_dict = {0: WHITE, 1: YELLOW, 2: RED, 3: GREEN, 4: ORANGE, 5: BLUE}
-
+YELLOW_NUM = 1
+WHITE_NUM = 0
+# (Side_color,segment_to_turn)-(new_color,times_to_turn)// translating every move so that only right turns are used
 MOVE_TRANSLATIONS = {
-    (0, 'T'): (4, 3),
-    (0, 'B'): (2, 1),
+    (0, 'U'): (4, 3),
+    (0, 'D'): (2, 1),
     (0, 'R'): (5, 1),
     (0, 'L'): (3, 3),
 
-    (1, 'T'): (2, 3),
-    (1, 'B'): (4, 1),
+    (1, 'U'): (2, 3),
+    (1, 'D'): (4, 1),
     (1, 'R'): (5, 1),
     (1, 'L'): (3, 3),
 
-    (2, 'T'): (0, 3),
-    (2, 'B'): (1, 1),
+    (2, 'U'): (0, 3),
+    (2, 'D'): (1, 1),
     (2, 'R'): (5, 1),
     (2, 'L'): (3, 3),
 
-    (3, 'T'): (0, 3),
-    (3, 'B'): (1, 1),
+    (3, 'U'): (0, 3),
+    (3, 'D'): (1, 1),
     (3, 'R'): (2, 1),
     (3, 'L'): (4, 3),
 
-    (4, 'T'): (0, 3),
-    (4, 'B'): (1, 1),
+    (4, 'U'): (0, 3),
+    (4, 'D'): (1, 1),
     (4, 'R'): (3, 1),
     (4, 'L'): (5, 3),
 
-    (5, 'T'): (0, 3),
-    (5, 'B'): (1, 1),
+    (5, 'U'): (0, 3),
+    (5, 'D'): (1, 1),
     (5, 'R'): (4, 1),
     (5, 'L'): (2, 3),
 }
@@ -84,9 +86,9 @@ class Side:
         self.transformed_points = [self.up_left_transformed, self.down_left_transformed,
                                    self.up_right_transformed, self.down_right_transformed]
 
-    def to_2d(self):
+    def calculate_projection(self, points):
         res = []
-        for point in self.transformed_points:
+        for point in points:
             projection = np.dot(self.projection_matrix, point)
 
             x = int(projection[0][0]*SCALE+CUBE_CENTER_WIDTH)
@@ -95,25 +97,17 @@ class Side:
             res.append([x, y])
         return res
 
+    def to_2d(self):
+        return self.calculate_projection(self.transformed_points)
+
     def avg_depth(self):
         return np.mean([point[2] for point in self.transformed_points])
 
     def transform_list_of_points(self, transformed_edges):
-        res = []
-        for points in transformed_edges:
-            res1 = []
-            for point in points:
-                projection = np.dot(self.projection_matrix, point)
-
-                x = int(projection[0][0]*SCALE+CUBE_CENTER_WIDTH)
-                y = int(projection[1][0]*SCALE+CUBE_CENTER_HEIGHT)
-
-                res1.append([x, y])
-            res.append(res1)
-        return res
+        return [self.calculate_projection(points) for points in transformed_edges]
 
     def get_small_cubes_edge_points(self):
-
+        # calculate every vertex of every cubbie on the side
         edge_points = [[self.transformed_points[0], (self.transformed_points[0]*2+self.transformed_points[1])/3, (self.transformed_points[0]+self.transformed_points[1]*2)/3, self.transformed_points[1]],
                        [self.transformed_points[1], (
                            self.transformed_points[1]*2+self.transformed_points[2])/3, (self.transformed_points[1]+self.transformed_points[2]*2)/3, self.transformed_points[2]],
@@ -139,6 +133,7 @@ class Side:
         return (top_to_bottom_points_transformed, left_to_right_points_transformed)
 
     def get_small_cubes_polygon(self):
+        # getting the list of points that represent every cubbie of the side. Later this is used to visualize the side with different colors
         top_to_bottom_points, left_to_right_points = self.get_small_cubes_edge_points()
         result = [[], [], []]
         for i in range(0, 3):
@@ -152,6 +147,7 @@ class Side:
         return result
 
     def get_edge_points(self):
+        # List with every point of the vertex of the cube
         transformed_edges = [[self.transformed_points[0], (self.transformed_points[0]+self.transformed_points[1]*2)/3, (self.transformed_points[0]*2+self.transformed_points[1])/3, self.transformed_points[1]],
                              [self.transformed_points[1], (self.transformed_points[1]+self.transformed_points[2]*2)/3, (
                                  self.transformed_points[1]*2+self.transformed_points[2])/3, self.transformed_points[2]],
@@ -162,25 +158,10 @@ class Side:
         return self.transform_list_of_points(transformed_edges)
 
 
-# sides_cord = [
-#            [[-1,  -1, -1], [-1, 1, -1], [-1,  -1,  1], [-1, 1,  1],
-#             ],  # Left (-X) face
-#            [[1, -1,  1], [1,  1,  1], [1, -1, -1],
-#                [1,  1, -1]],  # Right (+X) face
-#            [[-1,  1,  1], [-1,  1, -1],  [1,  1,  1], [1,  1, -1],
-#             ],  # Bottom (+Y) face
-#            [[-1, -1, -1], [-1, -1,  1], [1, -1, -1],   [1, -1,  1]
-#             ],  # Top (-Y) face
-#            [[1, -1, -1], [1,  1, -1],  [-1,  -1, -1], [-1, 1, -1],
-#             ],  # Back (-Z) face
-#            [[-1, -1,  1], [-1,  1,  1],   [1,  -1,  1],
-#                [1, 1,  1]]   # Front (+Z) face
-#        ]
-
-
 class Cube:
     def __init__(self):
         self.sides = []
+        # The coordinates of every vertex of the cube in the 3d plane
         sides_cord = [
             [[-1,  -1,  1], [-1, 1,  1], [-1,  -1, -1], [-1, 1, -1],
              ],  # Left (-X) face
@@ -202,9 +183,6 @@ class Cube:
                 np.array(side[2]),
                 np.array(side[3]), color, color_num))
         self.cube = TrueCube()
-        # self.cube.turn(2, 'R', 'F')
-        # self.cube.turn(3, 'R', 'F')
-        # self.cube.turn(1, 'R', 'F')
 
     def get_all_points(self):
         res = []
@@ -231,6 +209,7 @@ class Cube:
         return self.sides[0:3]
 
     def get_top_small_cubes(self):
+        # Gets every cubbie, from the sides that are shown to the screen
         top_sides = self.get_top_sides()
         result = []
         for side in top_sides:
@@ -247,6 +226,24 @@ class Cube:
 
         return result
 
+    def turn(self, color, segment, direction, angle):
+        segments_order = ['R', 'U',  'L', 'D']
+
+        if color == YELLOW_NUM or color == WHITE_NUM:
+            # so that the visualization perspective is aligned with the logic perspective the angle is incremented
+            angle += 1.6
+            new_segment_position = segments_order.index(
+                segment)+int(angle/0.8) % len(segments_order)
+            if color == YELLOW_NUM:
+                new_segment_position = (
+                    new_segment_position+2) % len(segments_order)
+                # keeping the perspective correct
+                if direction == 'F':
+                    direction = 'L'
+                elif direction == 'L':
+                    direction = 'F'
+            segment = segments_order[new_segment_position]
+        self.cube.turn(color, segment, direction)
 
 # 0-white
 # 1-yellow
