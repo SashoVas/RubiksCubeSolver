@@ -1,9 +1,12 @@
 import numpy as np
+from random import randint
 WIDTH = 800
 HEIGHT = 600
 SCALE = 150
 CUBE_CENTER_WIDTH = int(WIDTH/2)
 CUBE_CENTER_HEIGHT = int(HEIGHT/2)
+SEGMENTS_ORDER = ['R', 'U',  'L', 'D']
+
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
@@ -227,24 +230,34 @@ class Cube:
         return result
 
     def turn(self, color, segment, direction, angle):
-        segments_order = ['R', 'U',  'L', 'D']
 
         if color == YELLOW_NUM or color == WHITE_NUM:
             # so that the visualization perspective is aligned with the logic perspective the angle is incremented
             angle += 1.6
-            new_segment_position = segments_order.index(
-                segment)+int(angle/0.8) % len(segments_order)
+            new_segment_position = SEGMENTS_ORDER.index(
+                segment)+int(angle/0.8) % len(SEGMENTS_ORDER)
             if color == YELLOW_NUM:
                 new_segment_position = (
-                    new_segment_position+2) % len(segments_order)
+                    new_segment_position+2) % len(SEGMENTS_ORDER)
                 # keeping the perspective correct
                 if direction == 'F':
-                    direction = 'L'
-                elif direction == 'L':
+                    direction = 'B'
+                elif direction == 'B':
                     direction = 'F'
-            segment = segments_order[new_segment_position]
+            segment = SEGMENTS_ORDER[new_segment_position]
         self.cube.turn(color, segment, direction)
 
+    def scramble(self):
+        moves = []
+        for _ in range(20):
+            side_to_move = randint(0, 5)
+            segment = SEGMENTS_ORDER[randint(0, 3)]
+            direction = ['F', 'B'][randint(0, 1)]
+            moves.append((side_to_move, segment, direction))
+
+        self.last_scramble = moves
+        for side_to_move, segment, direction in moves:
+            self.cube.turn(side_to_move, segment, direction)
 # 0-white
 # 1-yellow
 # 2-red
@@ -334,11 +347,10 @@ class TrueCube:
             new_color, times = MOVE_TRANSLATIONS[(color, segment)]
         else:
             new_color, times = color, 1
-        if direction == 'L':
+        if direction == 'B':
             times = 1 if times == 3 else 3
         for _ in range(0, times):
             self.right_turn(new_color)
-
 
  # 0-white
 # 1-yellow

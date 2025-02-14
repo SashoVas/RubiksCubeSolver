@@ -1,7 +1,7 @@
 from cube import Cube
 import numpy as np
 import pygame
-from math import sin, cos
+from math import sin, cos, pi
 WIDTH = 800
 HEIGHT = 600
 RED = (255, 0, 0)
@@ -41,11 +41,10 @@ class VisualizationEngine:
         # D- right segment
         # S- down segment
         # W- top segment
-        segments_order = ['U', 'R', 'D', 'L']
 
         self.commands_segment_selection = {
             'A': 'L', 'D': 'R', 'S': 'D', 'W': 'U'}
-        self.commands_direction_selection = {'A': 'L', 'D': 'F'}
+        self.commands_direction_selection = {'A': 'B', 'D': 'F'}
 
     def control_definition(self, event):
 
@@ -103,6 +102,9 @@ class VisualizationEngine:
             self.current_pressed_key = 'D'
             self.rotation_command = True
 
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_LSHIFT:
+            self.cube.scramble()
+
     def game_loop(self):
         while True:
             self.clock.tick(60)
@@ -129,7 +131,7 @@ class VisualizationEngine:
             ]
             )
             if self.is_rotating:
-                self.angle_y += 0.01
+                self.angle_y = (self.angle_y + 0.01) % (2*pi)
                 # self.angle_x += 0.01
                 # self.angle_z += 0.01
                 pass
