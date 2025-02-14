@@ -474,18 +474,83 @@ def check_white_red_green_edge(sides):
     return check_white_red_blue_edge(sides) and sides[0][2][0] == 0 and sides[2][0][0] == 2 and sides[3][0][2] == 3
 
 
-def find_path(sides, validation_func, moves):
+def check_orange_green_edge(sides):
+    return check_white_red_green_edge(sides) and sides[4][1][2] == 4 and sides[3][1][0] == 3
+
+
+def check_orange_blue_edge(sides):
+    return check_orange_green_edge(sides) and sides[4][1][0] == 4 and sides[5][1][2] == 5
+
+
+def check_red_green_edge(sides):
+    return check_orange_blue_edge(sides) and sides[2][1][0] == 2 and sides[3][1][2] == 3
+
+
+def check_red_blue_edge(sides):
+    return check_red_green_edge(sides) and sides[2][1][2] == 2 and sides[5][1][0] == 5
+
+
+def check_yellow_cross(sides):
+    return check_red_blue_edge(sides) and sides[1][2][1] == 1 and sides[1][1][2] == 1 and sides[1][1][0] == 1 and sides[1][0][1] == 1
+
+
+def check_partial_bottom_row(sides):
+    return check_yellow_cross(sides) and ((sides[3][2][1] == 3 and sides[4][2][1] == 4) or (sides[5][2][1] == 5 and sides[2][2][1] == 2) or (sides[2][2][1] == 2 and sides[3][2][1] == 3) or (sides[4][2][1] == 4 and sides[5][2][1] == 5))
+
+
+def check_bottom_row(sides):
+    return check_partial_bottom_row(sides) and sides[3][2][1] == 3 and sides[4][2][1] == 4 and sides[5][2][1] == 5 and sides[2][2][1] == 2
+
+
+def check_orient_of_two_consecutive_edges(sides):
+    orange_green_colors = [sides[4][2][2], sides[3][2][0], sides[1][2][0]]
+    orange_blue_colors = [sides[4][2][0], sides[5][2][2], sides[1][2][2]]
+    red_blue_colors = [sides[2][2][2], sides[5][2][0], sides[1][0][2]]
+    red_green_colors = [sides[2][2][0], sides[3][2][2], sides[1][0][0]]
+
+    orange_green = 4 in orange_green_colors and 3 in orange_green_colors
+    orange_blue = 4 in orange_blue_colors and 5 in orange_blue_colors
+    red_blue = 2 in red_blue_colors and 5 in red_blue_colors
+    red_green = 2 in red_green_colors and 3 in red_green_colors
+    return check_bottom_row(sides) and ((orange_green and orange_blue) or (orange_blue and red_blue) or (orange_green and red_green) or (red_blue and red_green))
+
+
+def check_orient_of_all_yellow_edges(sides):
+    orange_green_colors = [sides[4][2][2], sides[3][2][0], sides[1][2][0]]
+    orange_blue_colors = [sides[4][2][0], sides[5][2][2], sides[1][2][2]]
+    red_blue_colors = [sides[2][2][2], sides[5][2][0], sides[1][0][2]]
+    red_green_colors = [sides[2][2][0], sides[3][2][2], sides[1][0][0]]
+
+    orange_green = 4 in orange_green_colors and 3 in orange_green_colors
+    orange_blue = 4 in orange_blue_colors and 5 in orange_blue_colors
+    red_blue = 2 in red_blue_colors and 5 in red_blue_colors
+    red_green = 2 in red_green_colors and 3 in red_green_colors
+    return check_bottom_row(sides) and orange_green and orange_blue and red_blue and red_green
+
+
+def check_two_solved_bottom_edges(sides):
+    return check_orient_of_all_yellow_edges(sides) and ((sides[2][2][2] == 2 and sides[2][2][0] == 2) or (sides[3][2][2] == 3 and sides[3][2][0] == 3) or (sides[4][2][2] == 4 and sides[4][2][0] == 4) or (sides[5][2][2] == 5 and sides[5][2][0] == 5))
+
+
+def check_solved(sides):
+    return check_two_solved_bottom_edges(sides) and sides[2][2][2] == 2 and sides[2][2][0] == 2 and sides[3][2][2] == 3 and sides[3][2][0] == 3 and sides[4][2][2] == 4 and sides[4][2][0] == 4 and sides[5][2][2] == 5 and sides[5][2][0] == 5
+
+
+def find_path(sides, validation_func, moves, repeat_moves=True):
     if validation_func(sides):
         return TrueCube(sides), []
-    dummy_cube = TrueCube()
 
+    processed_moves = [(color, comp_moves.split(' '))
+                       for color, comp_moves in moves]
+    dummy_cube = TrueCube()
     queue = [(sides, [])]
-    # make dictionary
     while True:
         curr_sides, solving_steps = queue.pop(0)
-        for color, comp_moves in moves:
+        for color, comp_moves in processed_moves:
+            if not repeat_moves and len(solving_steps) and solving_steps[-1] == (color, comp_moves):
+                continue
             dummy_cube.set_sides(curr_sides)
-            for move in comp_moves.split(' '):
+            for move in comp_moves:
                 dummy_cube.turn(color, move, 'F')
             if validation_func(dummy_cube.get_sides()):
                 return dummy_cube, solving_steps+[(color, comp_moves)]
@@ -577,5 +642,67 @@ if __name__ == '__main__':
     solution = solution + solution_new
     new_cube, solution_new = find_path(
         new_cube.get_sides(), check_white_red_green_edge, needed_moves)
+    solution = solution + solution_new
+
+    moves = ['R R R D R D F D D D F F F',
+             'L L L D D D L D D D F F F D F', 'D']
+    needed_moves = get_needed_moves(moves, range(2, 6))
+
+    new_cube, solution_new = find_path(
+        new_cube.get_sides(), check_orange_green_edge, needed_moves)
+    solution = solution + solution_new
+
+    new_cube, solution_new = find_path(
+        new_cube.get_sides(), check_orange_blue_edge, needed_moves)
+    solution = solution + solution_new
+    new_cube, solution_new = find_path(
+        new_cube.get_sides(), check_red_green_edge, needed_moves)
+    solution = solution + solution_new
+    new_cube, solution_new = find_path(
+        new_cube.get_sides(), check_red_blue_edge, needed_moves)
+    solution = solution + solution_new
+
+    # moves = ['R D D R R R D R D R R R D',
+    #         'R L F R R R L L L D R L F R R R L L L D R L F R R R L L L D', 'D', 'D D', 'D D D']
+    moves = [
+        'R L F R R R L L L D R L F R R R L L L D R L F R R R L L L D']
+    needed_moves = get_needed_moves(moves, range(2, 6))
+    new_cube, solution_new = find_path(
+        new_cube.get_sides(), check_yellow_cross, needed_moves)
+    solution = solution + solution_new
+
+    moves = ['R R R D D R D R R R D R D',
+             'D']
+    needed_moves = get_needed_moves(moves, range(2, 6))
+    new_cube, solution_new = find_path(
+        new_cube.get_sides(), check_partial_bottom_row, needed_moves)
+    solution = solution + solution_new
+    new_cube, solution_new = find_path(
+        new_cube.get_sides(), check_bottom_row, needed_moves)
+    solution = solution + solution_new
+
+    # moves = ['R R R D D R D R R R D R L L L D D L D D D L L L D D D']
+    moves = ['R R R D L L L D D D R D L']
+    needed_moves = get_needed_moves(moves, range(2, 6))
+    new_cube, solution_new = find_path(
+        new_cube.get_sides(), check_orient_of_two_consecutive_edges, needed_moves)
+    solution = solution + solution_new
+    new_cube, solution_new = find_path(
+        new_cube.get_sides(), check_orient_of_all_yellow_edges, needed_moves)
+    solution = solution + solution_new
+    print('here')
+
+    moves = ['R R R D D R D R R R D R L L L D D L D D D L L L D D D',
+             'R R R D D R D R R R D R L L L D D L D D D L L L D D D R R R D D R D R R R D R L L L D D L D D D L L L D D D',
+             'R R R D D R D R R R D R L L L D D L D D D L L L D D D R R R D D R D R R R D R L L L D D L D D D L L L D D D R R R D D R D R R R D R L L L D D L D D D L L L D D D']
+    needed_moves = get_needed_moves(moves, range(2, 6))
+    new_cube, solution_new = find_path(
+        new_cube.get_sides(), check_two_solved_bottom_edges, needed_moves, repeat_moves=False)
+    print(len(solution_new))
+    solution = solution + solution_new
+    new_cube, solution_new = find_path(
+        new_cube.get_sides(), check_solved, needed_moves, repeat_moves=False)
+    print(len(solution_new))
+
     solution = solution + solution_new
     new_cube.print_cube()
