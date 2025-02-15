@@ -1,4 +1,5 @@
 # Rubik's Cube Solver 🎲🔄  
+![rubiks cube project preview](https://github.com/user-attachments/assets/a4b9ec1e-f684-4547-bf3c-1956d3ecb37f)
 
 This project is a **Rubik's Cube Solver** featuring a **custom-built 3D visualization**, multiple interaction methods, and an **AI-powered solving algorithm**.  
 
