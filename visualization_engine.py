@@ -175,7 +175,7 @@ class VisualizationEngine:
             self.animating_solve = False
 
         # print(self.animating_solve)
-        if self.animating_solve and time.time()-self.animation_clock_time > 0.02:
+        if self.animating_solve and time.time()-self.animation_clock_time > 0.04:
             move = self.solution.pop(0)
             for _ in range(move[3]):
                 self.cube.cube.turn(move[0], move[1], move[2])
