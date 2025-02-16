@@ -1,8 +1,46 @@
 from cube import TrueCube
 
 
+def find_path_no_copy(sides, validation_func, moves):
+    # Searches for the most optimal path of moves, till a condition is met.
+    # This algorithm does not copy the sides for every iteration of the while loop.
+
+    # Parameters:
+    #    moves (list(move)):Moves to be used in the search.
+    #    validation_func (func): Function that checks, if a condition is met.
+
+    # Returns:
+    #    dummy_cube: The resulting cube after the search.
+    #    solution: The moves that get you to the result the fastest..
+    if validation_func(sides):
+        return TrueCube(sides), []
+
+    processed_moves = [(color, comp_moves.split(' '))
+                       for color, comp_moves in moves]
+    dummy_cube = TrueCube(sides)
+    queue = [[]]
+    while True:
+        solving_steps = queue.pop(0)
+        for new_color, comp_moves in processed_moves:
+            to_iterate = solving_steps+[(new_color, comp_moves)]
+            for color, moves in to_iterate:
+                for move in moves:
+                    dummy_cube.turn(color, move, 'F')
+            if validation_func(dummy_cube.get_sides()):
+                return dummy_cube, to_iterate
+
+            queue.append(solving_steps + [(new_color, comp_moves)])
+
+            for i in range(len(to_iterate)-1, -1, -1):
+                for j in range(len(to_iterate[i][1])-1, -1, -1):
+                    dummy_cube.turn(to_iterate[i][0], to_iterate[i][1][j], 'B')
+
+
 def find_path(sides, validation_func, moves):
     # Searches for the most optimal path of moves, till a condition is met.
+    # This algorithm copies the sides for every iteration of the while loop.4
+    # This function performs better than find_path_no_copy,
+    # which can change depending on the complexity of the turn function.
 
     # Parameters:
     #    moves (list(move)):Moves to be used in the search.
