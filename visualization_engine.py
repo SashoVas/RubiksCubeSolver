@@ -15,11 +15,13 @@ BLACK = (0, 0, 0)
 YELLOW = (255, 255, 0)
 GRAY = (128, 128, 128)
 LIME = (50, 205, 50)
-
+SOLVE_ANIMATION_DELAY = 0.04
 sides_order = [4, 3, 2, 5]
 
 
 class VisualizationEngine:
+    # Handles the visualization of the cube
+
     def __init__(self):
         self.color_dict = {0: WHITE, 1: YELLOW,
                            2: RED, 3: GREEN, 4: ORANGE, 5: BLUE}
@@ -52,7 +54,12 @@ class VisualizationEngine:
         self.commands_direction_selection = {'A': 'B', 'D': 'F'}
 
     def control_definition(self, event):
+        # Handle all controls.
 
+        # Parameters:
+        #    event (pygame.event):The event to be parsed.
+
+        # Returns:
         if event.type == pygame.QUIT:
             pygame.quit()
             exit()
@@ -115,6 +122,11 @@ class VisualizationEngine:
             self.animating_solve = True
 
     def process_turn_command(self, selected_side):
+        # Process a command that turns the cube.
+
+        # Parameters:
+        #    selected_side (Side):The side that is being turn
+
         if self.rotation_command and self.last_pressed_key != None and self.current_pressed_key != None:
 
             self.cube.turn(selected_side.color_num,
@@ -127,6 +139,8 @@ class VisualizationEngine:
         self.rotation_command = False
 
     def draw_selected_side(self):
+        # Draws a green polygon around the selected side.
+
         selected_side = self.cube.get_top_sides()[0]
         p = selected_side.to_2d()
         temp = p[2]
@@ -137,6 +151,8 @@ class VisualizationEngine:
         return selected_side
 
     def draw_cube(self):
+        # Draws the cube on the screen.
+
         sides = self.cube.get_top_small_cubes()
         for side in sides:
             for position, color in side:
@@ -145,6 +161,8 @@ class VisualizationEngine:
                 pygame.draw.polygon(self.screen, BLACK, position, width=1)
 
     def handle_transformations(self):
+        # Handles all perspective changes.
+
         rotation_x = np.matrix([
             [1, 0, 0],
             [0, cos(self.angle_x), -sin(self.angle_x)],
@@ -170,18 +188,20 @@ class VisualizationEngine:
         self.cube.apply_transform([rotation_z, rotation_y, rotation_x])
 
     def animate_solve(self):
-        # print(self.solution)
+        # Animates the solving of the cube.
+
         if self.solution is None or len(self.solution) == 0:
             self.animating_solve = False
 
-        # print(self.animating_solve)
-        if self.animating_solve and time.time()-self.animation_clock_time > 0.04:
+        if self.animating_solve and time.time()-self.animation_clock_time > SOLVE_ANIMATION_DELAY:
             move = self.solution.pop(0)
             for _ in range(move[3]):
                 self.cube.cube.turn(move[0], move[1], move[2])
             self.animation_clock_time = time.time()
 
     def game_loop(self):
+        # The loop that keeps the game on.
+
         while True:
             self.clock.tick(60)
 

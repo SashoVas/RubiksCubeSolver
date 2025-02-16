@@ -57,8 +57,19 @@ NORMAL_COLORS = [2, 5, 4, 3]
 
 
 class Side:
+    # Representation of a side in a cube. This class is tasked with managing the perspective changes and transformations of a side in the cube.
 
     def __init__(self, up_left, down_left, up_right, down_right, color, color_num):
+        # Initializes a side
+
+        # Parameters:
+        #    up_left ([x,y,z]):The coordinates of the top left point of the side.
+        #    down_left ([x,y,z]):The coordinates of the down left point of the side.
+        #    up_right ([x,y,z]):The coordinates of the top right point of the side.
+        #    down_right ([x,y,z]):The coordinates of the down right point of the side.
+        #    color ([r,g,b]):The rgb value of the color, in the middle square.
+        #    color_num (int):The color number.
+
         self.up_left = up_left.reshape((3, 1))
         self.down_left = down_left.reshape((3, 1))
         self.up_right = up_right.reshape((3, 1))
@@ -74,6 +85,13 @@ class Side:
         self.color_num = color_num
 
     def apply_transform(self, transformations):
+        # Applies a transformation that changes the perspective of the side.
+        # The function multiplies the matrix and the vertices of the sides,
+        # which changes the perspective of the points in 3d
+
+        # Parameters:
+        #    transformations (3x3 np.matrix): Matrix that is used to change the perspective of the points on the side.
+
         self.up_left_transformed = self.up_left
         self.down_left_transformed = self.down_left
         self.up_right_transformed = self.up_right
@@ -93,6 +111,13 @@ class Side:
                                    self.up_right_transformed, self.down_right_transformed]
 
     def calculate_projection(self, points):
+        # Projects 3d point, to 2d plain
+
+        # Parameters:
+        #    points (list([x,y,z])]):The points to be projected.
+
+        # Returns:
+        #    res(list([x,y])):The points in 2d.
         res = []
         for point in points:
             projection = np.dot(self.projection_matrix, point)
@@ -104,16 +129,23 @@ class Side:
         return res
 
     def to_2d(self):
+        # Transforms the vertices of the sides to 2d
         return self.calculate_projection(self.transformed_points)
 
     def avg_depth(self):
+        # Returns the average depth of the side
         return np.mean([point[2] for point in self.transformed_points])
 
     def transform_list_of_points(self, transformed_edges):
         return [self.calculate_projection(points) for points in transformed_edges]
 
     def get_small_cubes_edge_points(self):
-        # calculate every vertex of every cubbie on the side
+        # Calculate every vertex of every cubby on the side
+
+        # Returns:
+        #    res(list(list([x,y,z]))):Returns a list of points for every line of the side.
+        # The points are evenly spaced, where every point is a vertex of a small cubby
+
         edge_points = [[self.transformed_points[0], (self.transformed_points[0]*2+self.transformed_points[1])/3, (self.transformed_points[0]+self.transformed_points[1]*2)/3, self.transformed_points[1]],
                        [self.transformed_points[1], (
                            self.transformed_points[1]*2+self.transformed_points[2])/3, (self.transformed_points[1]+self.transformed_points[2]*2)/3, self.transformed_points[2]],
@@ -139,7 +171,12 @@ class Side:
         return (top_to_bottom_points_transformed, left_to_right_points_transformed)
 
     def get_small_cubes_polygon(self):
-        # getting the list of points that represent every cubbie of the side. Later this is used to visualize the side with different colors
+        # Getting the list of points that represent every cubby of the side. Later this is used to visualize the side with different colors
+
+        # Returns:
+        #    res(list(list([4*point]))):Returns a list with every polygon on the side,
+        #    that represents different square of the cube.
+        #    Each polygon is represented by 4 points.
         top_to_bottom_points, left_to_right_points = self.get_small_cubes_edge_points()
         result = [[], [], []]
         for i in range(0, 3):
@@ -153,7 +190,8 @@ class Side:
         return result
 
     def get_edge_points(self):
-        # List with every point of the vertex of the cube
+        # Gets outer points of the side, and returns the in 2d.
+
         transformed_edges = [[self.transformed_points[0], (self.transformed_points[0]+self.transformed_points[1]*2)/3, (self.transformed_points[0]*2+self.transformed_points[1])/3, self.transformed_points[1]],
                              [self.transformed_points[1], (self.transformed_points[1]+self.transformed_points[2]*2)/3, (
                                  self.transformed_points[1]*2+self.transformed_points[2])/3, self.transformed_points[2]],
@@ -166,6 +204,7 @@ class Side:
 
 class Cube:
     def __init__(self):
+        # Represents the cube, and handles its transformations
         self.sides = []
         # The coordinates of every vertex of the cube in the 3d plane
         sides_cord = [
@@ -191,6 +230,10 @@ class Cube:
         self.cube = TrueCube()
 
     def get_all_points(self):
+        # Gets the point of every side
+
+        # Returns:
+        #    res(list(points)):The points f every side.
         res = []
         for side in self.sides:
             res.append(side.up_left)
@@ -201,21 +244,27 @@ class Cube:
         return res
 
     def apply_transform(self, transformations):
+        # Applies a transformation to every side of the cube
         for side in self.sides:
             side.apply_transform(transformations)
 
     def to_2d(self):
+        # Returns every side in 2d
         res = []
         for side in self.sides:
             res += side.to_2d()
         return res
 
     def get_top_sides(self):
+        # Returns the most outer side, that will be visible when visualizing
         self.sides.sort(key=lambda x: x.avg_depth())
         return self.sides[0:3]
 
     def get_top_small_cubes(self):
-        # Gets every cubbie, from the sides that are shown to the screen
+        # Gets every cubby, from the sides that will be shown on the screen
+
+        # Returns:
+        #    result(list(list(polygon))): Every polygon of the three other sides of the cube.
         top_sides = self.get_top_sides()
         result = []
         for side in top_sides:
@@ -227,12 +276,17 @@ class Cube:
             for i in range(0, 3):
                 for j in range(0, 3):
                     side_polygons.append((polygons[i][j], colors[j][i]))
-                    # side_polygons.append((polygons[i][j], colors[i][j]))
             result.append(side_polygons)
 
         return result
 
     def turn(self, color, segment, direction, angle):
+        # Turns the cube in specific direction
+
+        # Parameters:
+        #    color (int)]):The color of the middle square of the side to be turned. Used to determine which side to turn.
+        #    segment(U,D,L,R): The segment of the side to turn. Up, Down, Left or Right
+        #    direction(F,B): The direction of the turn. Front or back
 
         if color == YELLOW_NUM or color == WHITE_NUM:
             # so that the visualization perspective is aligned with the logic perspective the angle is incremented
@@ -251,6 +305,7 @@ class Cube:
         self.cube.turn(color, segment, direction)
 
     def scramble(self):
+        # Scrambles the cube
         self.cube.scramble()
 
 
@@ -267,17 +322,25 @@ NORMAL_COLORS_NEIGHBORS = [2, 5, 4, 3]
 
 
 class TrueCube:
+    # The logical representation of the cube
 
     def __init__(self, sides=None):
+        # Initializes a cube
+
+        # Parameters:
+        #    sides (3x3 matrix)]): A predefined cube
         if sides is None:
             self.sides = [[[i]*3, [i]*3, [i]*3] for i in range(0, 6)]
         else:
             self.sides = sides
 
     def get_sides(self):
+        # Returns the sides of the cube
         return self.sides
 
     def set_sides(self, sides):
+        # Sets the sides of a cube. The function creates a deep copy of the sides,
+        # which is important, when searching for optimal solution.
         self.sides = []
         for side in sides:
             rows = []
@@ -286,6 +349,7 @@ class TrueCube:
             self.sides.append(rows)
 
     def scramble(self):
+        # Scrambles the cube
         moves = []
         for _ in range(20):
             side_to_move = randint(0, 5)
@@ -298,12 +362,17 @@ class TrueCube:
             self.turn(side_to_move, segment, direction)
 
     def print_cube(self):
+        # Prints the cube
         for side in self.sides:
             for row in side:
                 print(row)
             print('==========')
 
     def paste_arr(self, arr, side, row, col, rev=False):
+        # Places one array in the place of another
+
+        # Result:
+        # before(list):The arr before the new one was placed.
         before = []
         if row != -1 and col == -1:
             before = self.sides[side][row].copy()
@@ -329,6 +398,10 @@ class TrueCube:
         return before
 
     def extract_first_side(self, side, row, col):
+        # Extracting the fist side, when executing the algorithm for turning a side
+
+        # Returns:
+        # res(list): a list with the colors of the side
         if row != -1 and col == -1:
             return self.sides[side][row].copy()
 
@@ -342,6 +415,7 @@ class TrueCube:
         return None
 
     def rotate_face(self, color):
+        # It handles the rotation of the colors on the face of the side that is turned.
         row1 = self.sides[color][0].copy()
         row2 = self.sides[color][1].copy()
         row3 = self.sides[color][2].copy()
@@ -352,6 +426,7 @@ class TrueCube:
         self.paste_arr([row1[0], row2[0], row3[0]], color,  0, -1, True)
 
     def right_turn(self, color):
+        # Turns the cube in the right direction from the front of the side
         pos_dict = {0: [(2, 0, -1, False), (3, 0, -1, False), (4, 0, -1, False), (5, 0, -1, False)],
                     1: [(2, 2, -1, False), (5, 2, -1, False), (4, 2, -1, False), (3, 2, -1, False)],
                     2: [(1, 0, -1, False), (3, -1, 2, True), (0, 2, -1, False), (5, -1, 0, True)],
@@ -369,6 +444,10 @@ class TrueCube:
             row, info[0][0], info[0][1], info[0][2], rev=info[3][3])
 
     def translate_to_rights(self, color, segment, direction):
+        # Translates a move, so that it only uses front right turns
+
+        # Result:
+        # res(new_color,times):The new color to be turned front right, and how many times to turn it
         if segment != 'F':
             new_color, times = MOVE_TRANSLATIONS[(color, segment)]
         else:
@@ -378,7 +457,7 @@ class TrueCube:
         return (new_color, times)
 
     def turn(self, color, segment, direction):
-
+        # Turns a side segment of the cube in specific direction
         new_color, times = self.translate_to_rights(color, segment, direction)
         for _ in range(0, times):
             self.right_turn(new_color)

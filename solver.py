@@ -1,11 +1,245 @@
 from cube import TrueCube
 
 
+def find_path(sides, validation_func, moves):
+    # Searches for the most optimal path of moves, till a condition is met.
+
+    # Parameters:
+    #    moves (list(move)):Moves to be used in the search.
+    #    validation_func (func): Function that checks, if a condition is met.
+
+    # Returns:
+    #    dummy_cube: The resulting cube after the search.
+    #    solution: The moves that get you to the result the fastest..
+    if validation_func(sides):
+        return TrueCube(sides), []
+
+    processed_moves = [(color, comp_moves.split(' '))
+                       for color, comp_moves in moves]
+    dummy_cube = TrueCube()
+    queue = [(sides, [])]
+    while True:
+        curr_sides, solving_steps = queue.pop(0)
+        for color, comp_moves in processed_moves:
+
+            dummy_cube.set_sides(curr_sides)
+            for move in comp_moves:
+                dummy_cube.turn(color, move, 'F')
+            if validation_func(dummy_cube.get_sides()):
+                return dummy_cube, solving_steps+[(color, comp_moves)]
+            queue.append((dummy_cube.get_sides(), solving_steps +
+                         [(color, comp_moves)]))
+
+
+def get_unique_moves():
+    # Generates all unique moves in a rubik's cube
+
+    # Returns:
+    #    unique_moves(list(move)):All unique moves
+    dummy_cube = TrueCube()
+    segments = ['U', 'D', 'L', 'R']
+    all_moves = []
+    for color in range(2, 6):
+        for segment in segments:
+            all_moves.append((color, segment))
+    unique_moves_translation = set()
+    unique_moves = []
+    for color, segment in all_moves:
+        new_color, times = dummy_cube.translate_to_rights(
+            color, segment, 'F')
+        if (new_color, times) not in unique_moves_translation:
+            unique_moves_translation.add((new_color, times))
+            unique_moves.append((color, segment))
+    return unique_moves
+
+
+def get_needed_moves(moves, faces):
+    # Maps moves and faces
+
+    # Parameters:
+    #    moves (list(move)):Moves to be mapped to every face.
+    #    faces (list(num)):faces to be mapped to a move.
+
+    # Returns:
+    #    res: the mapped result.
+    res = []
+    for move in moves:
+        for face in faces:
+            res.append((face, move))
+    return res
+
+
+def solve_white(cube):
+    # Solves the white side of a rubik's cube
+
+    # Parameters:
+    #    cube (TrueCube):The cube to be solved.
+
+    # Returns:
+    #    new_cube(TrueCube):The solved cube.
+    #    solution(list(moves)): The moves that solve the cube.
+    solution = []
+    all_moves = get_unique_moves()
+    solving_order = [check_white_red,
+                     check_white_green,
+                     check_white_blue]
+    moves = ['F F', 'D R F F F R R R',
+             'L D L L L',
+             'R D D D R R R', 'R D R R R', 'L D D D L L L']
+    needed_moves = get_needed_moves(moves, range(2, 6)) + all_moves
+
+    new_cube, solution_new = find_path(
+        cube.get_sides(), check_white_orange, needed_moves)
+    solution = solution + solution_new
+    for func in solving_order:
+        new_cube, solution_new = find_path(
+            new_cube.get_sides(), func, needed_moves)
+        solution = solution + solution_new
+    moves = ['R R R D D D R D', 'F D F F F D D D',
+             'R R R D D R D R R R D D D R']
+
+    needed_moves = get_needed_moves(moves, range(
+        2, 6)) + [(2, 'D'), (2, 'D D'), (2, 'D D D')]  # + all_moves
+    solving_order = [check_white_orange_blue_edge, check_white_orange_green_edge,
+                     check_white_red_blue_edge, check_white_red_green_edge]
+
+    for func in solving_order:
+        new_cube, solution_new = find_path(
+            new_cube.get_sides(), func, needed_moves)
+        solution = solution + solution_new
+    return new_cube, solution
+
+
+def solve_second_row(new_cube, solution):
+    # Solves the second row of the sides of a rubik's cube
+
+    # Parameters:
+    #    cube (TrueCube):The cube to be solved. It has to have solved white side
+
+    # Returns:
+    #    new_cube(TrueCube):The solved cube.
+    #    solution(list(moves)): The moves that solve the cube.
+    moves = ['R R R D R D F D D D F F F',
+             'L L L D D D L D D D F F F D F']
+    needed_moves = get_needed_moves(moves, range(
+        2, 6)) + [(2, 'D'), (2, 'D D'), (2, 'D D D')]
+    solving_order = [check_orange_green_edge, check_orange_blue_edge,
+                     check_red_green_edge, check_red_blue_edge]
+
+    for func in solving_order:
+        new_cube, solution_new = find_path(
+            new_cube.get_sides(), func, needed_moves)
+        solution = solution + solution_new
+    return new_cube, solution
+
+
+def solve_yellow(new_cube, solution):
+    # Solves the yellow side of a rubik's cube
+
+    # Parameters:
+    #    cube (TrueCube):The cube to be solved. It has to have solved white side and second row
+
+    # Returns:
+    #    new_cube(TrueCube):The solved cube.
+    #    solution(list(moves)): The moves that solve the cube.
+    moves = [
+        'R L F R R R L L L D R L F R R R L L L D R L F R R R L L L D']  # , 'R L F R R R L L L D R L F R R R L L L D R L F R R R L L L D R L F R R R L L L D R L F R R R L L L D R L F R R R L L L D']
+    needed_moves = get_needed_moves(moves, range(2, 6))
+    new_cube, solution_new = find_path(
+        new_cube.get_sides(), check_yellow_cross, needed_moves)
+    solution = solution + solution_new
+
+    moves = ['R R R D D R D R R R D R D']
+    needed_moves = get_needed_moves(moves, range(
+        2, 6)) + [(2, 'D'), (2, 'D D'), (2, 'D D D')]
+    solving_order = [check_partial_bottom_row, check_bottom_row]
+    for func in solving_order:
+        new_cube, solution_new = find_path(
+            new_cube.get_sides(), func, needed_moves)
+
+        solution = solution + solution_new
+
+    moves = ['R R R D L L L D D D R D L',
+             'R R R D L L L D D D R D L R R R D L L L D D D R D L',
+             'R R R D L L L D D D R D L R R R D L L L D D D R D L R R R D L L L D D D R D L']
+    needed_moves = get_needed_moves(moves, range(2, 6))
+    solving_order = [check_orient_of_two_consecutive_edges,
+                     check_orient_of_all_yellow_edges]
+
+    for func in solving_order:
+        new_cube, solution_new = find_path(
+            new_cube.get_sides(), func, needed_moves)
+
+        solution = solution + solution_new
+    return new_cube, solution
+
+
+def solve_last_row(new_cube, solution):
+    # Solves the last row of a rubik's cube
+
+    # Parameters:
+    #    cube (TrueCube):The cube to be solved. It has to have white side, second row and yellow side, solved.
+
+    # Returns:
+    #    new_cube(TrueCube):The solved cube.
+    #    solution(list(moves)): The moves that solve the cube.
+    moves = ['R R R D D R D R R R D R L L L D D L D D D L L L D D D',
+             'R R R D D R D R R R D R L L L D D L D D D L L L D D D R R R D D R D R R R D R L L L D D L D D D L L L D D D',
+             'R R R D D R D R R R D R L L L D D L D D D L L L D D D R R R D D R D R R R D R L L L D D L D D D L L L D D D R R R D D R D R R R D R L L L D D L D D D L L L D D D',
+             'R R R D D R D R R R D R L L L D D L D D D L L L D D D R R R D D R D R R R D R L L L D D L D D D L L L D D D R R R D D R D R R R D R L L L D D L D D D L L L D D D R R R D D R D R R R D R L L L D D L D D D L L L D D D']
+    needed_moves = get_needed_moves(moves, range(2, 6))
+    solving_order = [check_two_solved_bottom_edges, check_solved]
+
+    for func in solving_order:
+        new_cube, solution_new = find_path(
+            new_cube.get_sides(), func, needed_moves)
+        solution = solution + solution_new
+    return new_cube, solution
+
+
+def solve(cube):
+    # Solves a rubik's cube.
+
+    # Parameters:
+    #    cube (TrueCube):The cube to be solved.
+
+    # Returns:
+    #    new_cube(TrueCube):The solved cube.
+    #    solution(list(moves)): The moves that solve the cube.
+    new_cube, solution = solve_white(cube)
+    new_cube, solution = solve_second_row(new_cube, solution)
+    new_cube, solution = solve_yellow(new_cube, solution)
+    new_cube, solution = solve_last_row(new_cube, solution)
+    solution = [(color, move) for color, moves in solution for move in moves]
+    processed_solution = []
+    while len(solution) >= 1:
+        current_move = solution.pop(0)
+        if len(solution) > 1 and solution[0] == current_move and solution[1] == current_move:
+            solution.pop(0)
+            solution.pop(0)
+            processed_solution.append(
+                (current_move[0], current_move[1], 'B', 1))
+            continue
+        if len(solution) > 1 and solution[0] == current_move:
+            solution.pop(0)
+            processed_solution.append(
+                (current_move[0], current_move[1], 'F', 2))
+            continue
+
+        processed_solution.append((current_move[0], current_move[1], 'F', 1))
+    print('Moves:', len(processed_solution))
+
+    return new_cube, processed_solution
+
+
 def is_solved(sides, *to_check):
+    # Checks if a specific color on a specific side is solved
     for color, i, j in to_check:
         if sides[color][i][j] != color:
             return False
     return True
+
+# These functions check, if different part of the cube is solved. They are used as a checkpoints in the solution of the cube
 
 
 def check_white_orange(sides):
@@ -108,178 +342,6 @@ def check_two_solved_bottom_edges(sides):
 
 def check_solved(sides):
     return is_solved(sides, (2, 2, 2), (2, 2, 0), (3, 2, 2), (3, 2, 0), (4, 2, 2), (4, 2, 0), (5, 2, 2), (5, 2, 0)) and check_two_solved_bottom_edges(sides)
-
-
-def find_path(sides, validation_func, moves):
-    if validation_func(sides):
-        return TrueCube(sides), []
-
-    processed_moves = [(color, comp_moves.split(' '))
-                       for color, comp_moves in moves]
-    dummy_cube = TrueCube()
-    queue = [(sides, [])]
-    while True:
-        curr_sides, solving_steps = queue.pop(0)
-        for color, comp_moves in processed_moves:
-
-            dummy_cube.set_sides(curr_sides)
-            for move in comp_moves:
-                dummy_cube.turn(color, move, 'F')
-            if validation_func(dummy_cube.get_sides()):
-                return dummy_cube, solving_steps+[(color, comp_moves)]
-            queue.append((dummy_cube.get_sides(), solving_steps +
-                         [(color, comp_moves)]))
-
-
-def get_unique_moves():
-    dummy_cube = TrueCube()
-    segments = ['U', 'D', 'L', 'R']
-    all_moves = []
-    for color in range(2, 6):
-        for segment in segments:
-            all_moves.append((color, segment))
-    unique_moves_translation = set()
-    unique_moves = []
-    for color, segment in all_moves:
-        new_color, times = dummy_cube.translate_to_rights(
-            color, segment, 'F')
-        if (new_color, times) not in unique_moves_translation:
-            unique_moves_translation.add((new_color, times))
-            unique_moves.append((color, segment))
-    return unique_moves
-
-
-def get_needed_moves(moves, faces):
-    res = []
-    for move in moves:
-        for face in faces:
-            res.append((face, move))
-    return res
-
-
-def solve_white(cube):
-    solution = []
-    all_moves = get_unique_moves()
-    solving_order = [check_white_red,
-                     check_white_green,
-                     check_white_blue]
-    moves = ['F F', 'D R F F F R R R',
-             'L D L L L',
-             'R D D D R R R', 'R D R R R', 'L D D D L L L']
-    needed_moves = get_needed_moves(moves, range(2, 6)) + all_moves
-
-    new_cube, solution_new = find_path(
-        cube.get_sides(), check_white_orange, needed_moves)
-    solution = solution + solution_new
-    for func in solving_order:
-        new_cube, solution_new = find_path(
-            new_cube.get_sides(), func, needed_moves)
-        solution = solution + solution_new
-    moves = ['R R R D D D R D', 'F D F F F D D D',
-             'R R R D D R D R R R D D D R']
-
-    needed_moves = get_needed_moves(moves, range(
-        2, 6)) + [(2, 'D'), (2, 'D D'), (2, 'D D D')]  # + all_moves
-    solving_order = [check_white_orange_blue_edge, check_white_orange_green_edge,
-                     check_white_red_blue_edge, check_white_red_green_edge]
-
-    for func in solving_order:
-        new_cube, solution_new = find_path(
-            new_cube.get_sides(), func, needed_moves)
-        solution = solution + solution_new
-    return new_cube, solution
-
-
-def solve_second_row(new_cube, solution):
-
-    moves = ['R R R D R D F D D D F F F',
-             'L L L D D D L D D D F F F D F']
-    needed_moves = get_needed_moves(moves, range(
-        2, 6)) + [(2, 'D'), (2, 'D D'), (2, 'D D D')]
-    solving_order = [check_orange_green_edge, check_orange_blue_edge,
-                     check_red_green_edge, check_red_blue_edge]
-
-    for func in solving_order:
-        new_cube, solution_new = find_path(
-            new_cube.get_sides(), func, needed_moves)
-        solution = solution + solution_new
-    return new_cube, solution
-
-
-def solve_yellow(new_cube, solution):
-
-    moves = [
-        'R L F R R R L L L D R L F R R R L L L D R L F R R R L L L D']  # , 'R L F R R R L L L D R L F R R R L L L D R L F R R R L L L D R L F R R R L L L D R L F R R R L L L D R L F R R R L L L D']
-    needed_moves = get_needed_moves(moves, range(2, 6))
-    new_cube, solution_new = find_path(
-        new_cube.get_sides(), check_yellow_cross, needed_moves)
-    solution = solution + solution_new
-
-    moves = ['R R R D D R D R R R D R D']
-    needed_moves = get_needed_moves(moves, range(
-        2, 6)) + [(2, 'D'), (2, 'D D'), (2, 'D D D')]
-    solving_order = [check_partial_bottom_row, check_bottom_row]
-    for func in solving_order:
-        new_cube, solution_new = find_path(
-            new_cube.get_sides(), func, needed_moves)
-
-        solution = solution + solution_new
-
-    moves = ['R R R D L L L D D D R D L',
-             'R R R D L L L D D D R D L R R R D L L L D D D R D L',
-             'R R R D L L L D D D R D L R R R D L L L D D D R D L R R R D L L L D D D R D L']
-    needed_moves = get_needed_moves(moves, range(2, 6))
-    solving_order = [check_orient_of_two_consecutive_edges,
-                     check_orient_of_all_yellow_edges]
-
-    for func in solving_order:
-        new_cube, solution_new = find_path(
-            new_cube.get_sides(), func, needed_moves)
-
-        solution = solution + solution_new
-    return new_cube, solution
-
-
-def solve_last_row(new_cube, solution):
-    moves = ['R R R D D R D R R R D R L L L D D L D D D L L L D D D',
-             'R R R D D R D R R R D R L L L D D L D D D L L L D D D R R R D D R D R R R D R L L L D D L D D D L L L D D D',
-             'R R R D D R D R R R D R L L L D D L D D D L L L D D D R R R D D R D R R R D R L L L D D L D D D L L L D D D R R R D D R D R R R D R L L L D D L D D D L L L D D D',
-             'R R R D D R D R R R D R L L L D D L D D D L L L D D D R R R D D R D R R R D R L L L D D L D D D L L L D D D R R R D D R D R R R D R L L L D D L D D D L L L D D D R R R D D R D R R R D R L L L D D L D D D L L L D D D']
-    needed_moves = get_needed_moves(moves, range(2, 6))
-    solving_order = [check_two_solved_bottom_edges, check_solved]
-
-    for func in solving_order:
-        new_cube, solution_new = find_path(
-            new_cube.get_sides(), func, needed_moves)
-        solution = solution + solution_new
-    return new_cube, solution
-
-
-def solve(cube):
-    new_cube, solution = solve_white(cube)
-    new_cube, solution = solve_second_row(new_cube, solution)
-    new_cube, solution = solve_yellow(new_cube, solution)
-    new_cube, solution = solve_last_row(new_cube, solution)
-    solution = [(color, move) for color, moves in solution for move in moves]
-    processed_solution = []
-    while len(solution) >= 1:
-        current_move = solution.pop(0)
-        if len(solution) > 1 and solution[0] == current_move and solution[1] == current_move:
-            solution.pop(0)
-            solution.pop(0)
-            processed_solution.append(
-                (current_move[0], current_move[1], 'B', 1))
-            continue
-        if len(solution) > 1 and solution[0] == current_move:
-            solution.pop(0)
-            processed_solution.append(
-                (current_move[0], current_move[1], 'F', 2))
-            continue
-
-        processed_solution.append((current_move[0], current_move[1], 'F', 1))
-    print('Moves:', len(processed_solution))
-
-    return new_cube, processed_solution
 
 
 if __name__ == '__main__':
