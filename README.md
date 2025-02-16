@@ -24,3 +24,18 @@ This project is a **Rubik's Cube Solver** featuring a **custom-built 3D visualiz
 Whether you're a beginner looking to explore or an expert speedsolver, this project provides an intuitive and powerful way to interact with and solve the Rubik’s Cube. 🧩🎯  
 
 🔥 **Try it out and let’s solve the cube!** 🔥
+
+## 🎨🕹️ 3D Visualization
+This project visualizes a Rubik's Cube using Pygame, leveraging manual 3D-to-2D transformation techniques to simulate depth and perspective. Instead of relying on external 3D rendering libraries, the cube's three-dimensional structure is projected onto a 2D plane using basic geometric transformations.
+
+## 🤖🧩 Solving Algorithm
+This Rubik’s Cube solver implements a Modified Breadth-First Search (BFS) with structured checkpoints to efficiently reach the solution step by step. Instead of treating the cube as a single search space where all states are equally important, the algorithm breaks the problem into logical milestones. Each milestone represents a significant step in standard solving methods, reducing the overall search complexity and ensuring efficient solving.
+
+### Key Idea: Layered BFS with Checkpoints
+The modified BFS does not search for a solution in one continuous step. Instead, it follows a layered approach, progressing through checkpoints in a defined order. Each checkpoint represents a major milestone in solving the cube. Additionally every checkpoint comes with its own predefined algorithms, so that the possible moves to get from one checkpoint to the other, is significantly reduced.
+
+### Advantages of the Checkpoint-Based BFS Approach
+✅ More efficient than a naive brute-force BFS – reduces the search space significantly.
+✅ Follows human-like solving intuition – aligns with common beginner and advanced solving techniques.
+✅ Easier to debug and visualize – because it progresses through structured stages.
+✅ Optimized move count – by focusing only on the moves necessary for the current milestone.
