@@ -308,6 +308,20 @@ class Cube:
         # Scrambles the cube
         self.cube.scramble()
 
+    def bbs_to_side(self, side):
+        bb_color_to_side_color = {
+            0: 5, 1: 3, 2: 4, 3: 2, 4: 0, 5: 1}
+        flatten = [bb_color_to_side_color[bb.class_id] for bb in side]
+        return [flatten[:3], flatten[3:6], flatten[6:]]
+
+    def load_from_bounding_boxes(self, sides):
+        self.cube = TrueCube([self.bbs_to_side(sides['white']),
+                             self.bbs_to_side(sides['yellow']),
+                             self.bbs_to_side(sides['red']),
+                             self.bbs_to_side(sides['green']),
+                             self.bbs_to_side(sides['orange']),
+                             self.bbs_to_side(sides['blue'])])
+
 
 # 0-white
 # 1-yellow

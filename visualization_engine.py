@@ -4,6 +4,8 @@ import pygame
 from math import sin, cos, pi
 from solver import solve
 import time
+from computer_vision.video_detector import get_sides
+
 WIDTH = 800
 HEIGHT = 600
 RED = (255, 0, 0)
@@ -70,6 +72,8 @@ class VisualizationEngine:
 
         if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
             self.is_rotating = not self.is_rotating
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_v:
+            self.cube.load_from_bounding_boxes(get_sides())
 
         if event.type == pygame.KEYUP:
             self.is_pressed_key = False
